@@ -1,9 +1,8 @@
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const cfg=window.TRAVEL_CONFIG||{};
-// v5.8.2: Supabase CDN/config가 잠시 실패해도 앱 전체가 멈추지 않도록 보호
-const sb=(window.supabase && cfg.SUPABASE_URL && cfg.SUPABASE_ANON_KEY)
- ? window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY)
- : null;
+// v5.9: 브라우저가 Supabase에 직접 접속하지 않습니다.
+// 모든 동기화는 동일 출처의 Vercel /api/travel-data 를 통해 처리합니다.
+// 따라서 회사망/모바일망에서 *.supabase.co 직접 접속이 막혀도 앱 기능은 유지됩니다.
 const esc=(s="")=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 const money=n=>"₩"+Number(n||0).toLocaleString("ko-KR");
 
@@ -35,8 +34,49 @@ function mergeRows(serverRows,localRows){
  (localRows||[]).forEach(x=>map.set(String(x.id),x));
  return [...map.values()];
 }
-async function tryServer(fn){
- try{return await fn()}catch(err){console.warn("Background server sync skipped:",err);return {error:err}}
+async function apiData(table,method="GET",row=null,id=null){
+ const qs=new URLSearchParams();
+ if(table) qs.set("table",table);
+ if(id!==null&&id!==undefined&&id!=="") qs.set("id",String(id));
+ const opt={method,headers:{"Accept":"application/json"},cache:"no-store"};
+ if(row!==null){opt.headers["Content-Type"]="application/json";opt.body=JSON.stringify(row)}
+ let res;
+ try{res=await fetch(`/api/travel-data?${qs.toString()}`,opt)}
+ catch(err){throw new Error("동기화 서버에 연결할 수 없습니다. Vercel 배포 상태를 확인해 주세요.")}
+ let payload={};
+ try{payload=await res.json()}catch(_){payload={}}
+ if(!res.ok||payload.error) throw new Error(payload.error||`동기화 서버 오류 (HTTP ${res.status})`);
+ return payload.data;
+}
+function positiveServerRows(rows){return (rows||[]).filter(x=>Number(x.id)>0)}
+function legacyLocalRows(kind){return localRead(kind).filter(x=>Number(x.id)<=0)}
+function applyServerSnapshot(data){
+ trips=mergeRows((data.trips||[]).filter(x=>x.is_visible!==false),legacyLocalRows("trips"));
+ events=mergeRows((data.events||[]).filter(x=>x.is_visible!==false),legacyLocalRows("events"));
+ budgets=mergeRows(data.budgets||[],legacyLocalRows("budgets"));
+ places=mergeRows(data.places||[],legacyLocalRows("places"));
+ // 서버 원본을 로컬 캐시에 저장하되, 아직 이관되지 않은 음수 ID 자료는 보존합니다.
+ localWrite("trips",trips);localWrite("events",events);localWrite("budgets",budgets);localWrite("places",places);
+}
+let __serverFingerprint="";
+function snapshotFingerprint(data){
+ const slim=k=>(data[k]||[]).map(x=>[x.id,x.updated_at||x.created_at||""]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+ return JSON.stringify({trips:slim("trips"),events:slim("events"),budgets:slim("budgets"),places:slim("places")});
+}
+async function quietSync(){
+ if(document.hidden||$$(`.editor-modal:not([hidden])`).length) return;
+ try{
+  const data=await apiData("all");
+  const fp=snapshotFingerprint(data);
+  if(fp===__serverFingerprint) return;
+  __serverFingerprint=fp;applyServerSnapshot(data);renderAll();
+ }catch(err){console.warn("Quiet sync skipped:",err)}
+}
+function startAutoSync(){
+ clearInterval(window.__travelSyncTimer);
+ window.__travelSyncTimer=setInterval(quietSync,5000);
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)quietSync()});
+ window.addEventListener("focus",quietSync);
 }
 
 let trips=[],events=[],budgets=[],regions=[],worldPlaces=[],places=[];
@@ -82,7 +122,7 @@ let koreaMap=null,worldMap=null,koreaMapMarkers=[],worldMapMarkers=[];
 
 function friendlyError(err){
  const raw=(err&&err.message)||String(err||"");
- if(/failed to fetch/i.test(raw)) return "데이터 서버에 연결할 수 없습니다. 인터넷 연결 또는 Supabase 연결 설정을 확인해 주세요.";
+ if(/failed to fetch|동기화 서버에 연결/i.test(raw)) return "동기화 서버에 연결할 수 없습니다. Vercel 배포 상태를 확인해 주세요.";
  if(/row-level security|rls/i.test(raw)) return "현재 데이터 저장 권한이 설정되지 않았습니다. Supabase 권한 설정을 확인해 주세요.";
  if(/relation .* does not exist|could not find/i.test(raw)) return "필요한 데이터 테이블이 아직 준비되지 않았습니다. Supabase SQL 설정을 먼저 확인해 주세요.";
  return raw || "저장 중 오류가 발생했습니다.";
@@ -107,30 +147,11 @@ $("#editorBackdrop").addEventListener("click",()=>{$$(".editor-modal").forEach(m
 async function loadAll(){
  const localTrips=localRead("trips"),localEvents=localRead("events"),localBudgets=localRead("budgets"),localPlaces=localRead("places");
  try{
-  if(!sb) throw new Error("Supabase client is not available");
-  const [t,e,b,p]=await Promise.all([
-   sb.from("travel_trips").select("*").eq("is_visible",true).order("start_date"),
-   sb.from("travel_events").select("*").eq("is_visible",true).order("event_date"),
-   sb.from("travel_budgets").select("*").order("sort_order"),
-   sb.from("travel_places").select("*").order("created_at",{ascending:false})
-  ]);
-  trips=mergeRows(t.data||[],localTrips);
-  events=mergeRows(e.data||[],localEvents);
-  budgets=mergeRows(b.data||[],localBudgets);
-
-  // 방문지는 Supabase가 정상 조회되면 서버 데이터를 기준으로 사용.
-  // 과거 PC에만 저장된 음수 ID 자료만 임시로 함께 보여 준다.
-  if(p.error){
-   console.warn("travel_places load failed; using local places.",p.error);
-   places=localPlaces;
-  }else{
-   const legacyLocal=localPlaces.filter(x=>Number(x.id)<=0);
-   places=mergeRows(p.data||[],legacyLocal);
-   // 과거에 남은 양수 ID 캐시는 서버 원본을 덮어쓰지 않도록 정리
-   if(localPlaces.some(x=>Number(x.id)>0)) localWrite("places",legacyLocal);
-  }
+  const data=await apiData("all");
+  __serverFingerprint=snapshotFingerprint(data);
+  applyServerSnapshot(data);
  }catch(err){
-  console.warn("Supabase unavailable; using local data.",err);
+  console.warn("Server sync unavailable; using local cache.",err);
   trips=localTrips;events=localEvents;budgets=localBudgets;places=localPlaces;
  }
  renderAll();
@@ -306,62 +327,39 @@ function editPlace(id){
 placeTypeEdit.onchange=()=>populatePlaceNames(placeTypeEdit.value);
 placeFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("placeFormPublic");
- const existing=placeEditId.value;
- const id=existing?Number(existing):null;
+ const existing=placeEditId.value;const id=existing?Number(existing):null;
  const type=placeTypeEdit.value,name=placeNameEdit.value,coord=(PLACE_PRESETS[type]||{})[name];
  if(!coord)return;
  const now=new Date().toISOString();
  const p={place_type:type,status:placeStatusEdit.value,place_name:name,latitude:coord[0],longitude:coord[1],author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:now};
  try{
-  if(!sb) throw new Error("Supabase 연결이 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
-  let r;
-  if(id && id>0){
-   r=await sb.from("travel_places").update(p).eq("id",id).select().single();
-  }else{
-   r=await sb.from("travel_places").insert({...p,created_at:now}).select().single();
-  }
-  if(r.error) throw r.error;
+  let saved;
+  if(id&&id>0) saved=await apiData("travel_places","PUT",p,id);
+  else saved=await apiData("travel_places","POST",{...p,created_at:now});
   if(id) localDelete("places",id);
+  if(saved) localUpsert("places",saved);
   closeModal("placeModal");
   toast(existing?"방문지가 수정·동기화되었습니다.":"방문지가 저장·동기화되었습니다.");
   await loadAll();
- }catch(err){
-  console.error("travel_places save failed:",err);
-  showFormError("placeFormPublic",err);
- }
+ }catch(err){console.error("travel_places save failed:",err);showFormError("placeFormPublic",err)}
 }
 deletePlaceBtn.onclick=async()=>{
  const id=Number(placeEditId.value);if(!id||!confirm("이 방문지 기록을 삭제하시겠습니까?"))return;
  clearFormError("placeFormPublic");
  try{
-  if(id>0){
-   if(!sb) throw new Error("Supabase 연결이 준비되지 않았습니다. 잠시 후 다시 시도해 주세요.");
-   const r=await sb.from("travel_places").delete().eq("id",id);
-   if(r.error) throw r.error;
-  }
-  localDelete("places",id);
-  closeModal("placeModal");toast("방문지가 삭제되었습니다.");await loadAll();
- }catch(err){
-  console.error("travel_places delete failed:",err);
-  showFormError("placeFormPublic",err);
- }
+  if(id>0) await apiData("travel_places","DELETE",null,id);
+  localDelete("places",id);closeModal("placeModal");toast("방문지가 삭제·동기화되었습니다.");await loadAll();
+ }catch(err){console.error("travel_places delete failed:",err);showFormError("placeFormPublic",err)}
 }
 async function migrateLegacyPlacesInBackground(){
  try{
-  if(!sb) return;
-  const legacy=localRead("places").filter(x=>Number(x.id)<=0);
-  if(!legacy.length) return;
-  let moved=0;
+  const legacy=legacyLocalRows("places");if(!legacy.length)return;let moved=0;
   for(const row of legacy){
-   const q={...row};delete q.id;
-   q.created_at=q.created_at||new Date().toISOString();
-   q.updated_at=new Date().toISOString();
-   const r=await sb.from("travel_places").insert(q).select().single();
-   if(r.error){console.warn("Legacy place sync skipped:",r.error);continue;}
-   localDelete("places",row.id);moved++;
+   const q={...row};delete q.id;q.created_at=q.created_at||new Date().toISOString();q.updated_at=new Date().toISOString();
+   try{const saved=await apiData("travel_places","POST",q);if(saved){localDelete("places",row.id);moved++}}catch(err){console.warn("Legacy place sync skipped:",err)}
   }
-  if(moved){toast(`PC에만 있던 방문지 ${moved}건을 동기화했습니다.`);await loadAll();}
- }catch(err){console.warn("Legacy place background migration skipped:",err);}
+  if(moved){toast(`PC에만 있던 방문지 ${moved}건을 동기화했습니다.`);await loadAll()}
+ }catch(err){console.warn("Legacy place background migration skipped:",err)}
 }
 placeTypeFilter.onchange=renderPlaces;placeStatusFilter.onchange=renderPlaces;placeSearch.oninput=renderPlaces;
 openPlaceCreate.onclick=newPlace;
@@ -389,17 +387,17 @@ function newTrip(){resetTripForm();openModal("tripModal")}
 function editTrip(id){const x=trips.find(v=>v.id===id);if(!x)return;tripEditId.value=x.id;tripTypeEdit.value=x.trip_type;tripStatusEdit.value=x.status;tripTitleEdit.value=x.title;tripStartEdit.value=x.start_date||"";tripEndEdit.value=x.end_date||"";tripRegionEdit.value=x.region||"";tripCityEdit.value=x.city||"";tripCountryEdit.value=x.country||"";tripMemoEdit.value=x.memo||"";tripAuthorEdit.value=x.author_name||"";tripModalTitle.textContent="여행 수정";deleteTripBtn.hidden=false;openModal("tripModal")}
 tripFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("tripFormPublic");
- const existing=tripEditId.value;
- const id=existing?Number(existing):localNextId("trips");
- const p={id,trip_type:tripTypeEdit.value,status:tripStatusEdit.value,title:tripTitleEdit.value.trim(),start_date:tripStartEdit.value||null,end_date:tripEndEdit.value||null,region:tripRegionEdit.value.trim(),city:tripCityEdit.value.trim(),country:tripCountryEdit.value.trim(),memo:tripMemoEdit.value.trim(),author_name:tripAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
- localUpsert("trips",p);closeModal("tripModal");toast(existing?"여행이 수정되었습니다.":"여행이 저장되었습니다.");await loadAll();
- if(id>0){const q={...p};delete q.id;await tryServer(()=>sb.from("travel_trips").update(q).eq("id",id));}
- else{const q={...p};delete q.id;const r=await tryServer(()=>sb.from("travel_trips").insert(q).select().single());if(r&&!r.error&&r.data){localDelete("trips",id);localUpsert("trips",r.data);await loadAll();}}
+ const existing=tripEditId.value;const id=existing?Number(existing):null;
+ const p={trip_type:tripTypeEdit.value,status:tripStatusEdit.value,title:tripTitleEdit.value.trim(),start_date:tripStartEdit.value||null,end_date:tripEndEdit.value||null,region:tripRegionEdit.value.trim(),city:tripCityEdit.value.trim(),country:tripCountryEdit.value.trim(),memo:tripMemoEdit.value.trim(),author_name:tripAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
+ try{
+  const saved=(id&&id>0)?await apiData("travel_trips","PUT",p,id):await apiData("travel_trips","POST",p);
+  if(id)localDelete("trips",id);if(saved)localUpsert("trips",saved);
+  closeModal("tripModal");toast(existing?"여행이 수정·동기화되었습니다.":"여행이 저장·동기화되었습니다.");await loadAll();
+ }catch(err){showFormError("tripFormPublic",err)}
 }
 deleteTripBtn.onclick=async()=>{
  const id=Number(tripEditId.value);if(!id||!confirm("이 여행과 연결된 일정·예산까지 삭제될 수 있습니다. 정말 삭제하시겠습니까?"))return;
- localDelete("trips",id);if(id>0)await tryServer(()=>sb.from("travel_trips").delete().eq("id",id));
- closeModal("tripModal");toast("여행이 삭제되었습니다.");await loadAll();
+ try{if(id>0)await apiData("travel_trips","DELETE",null,id);localDelete("trips",id);closeModal("tripModal");toast("여행이 삭제·동기화되었습니다.");await loadAll()}catch(err){showFormError("tripFormPublic",err)}
 }
 
 /* 일정 CRUD */
@@ -408,17 +406,17 @@ function newEvent(){resetEventForm();openModal("eventModal")}
 function editEvent(id){const x=events.find(v=>v.id===id);if(!x)return;eventEditId.value=x.id;eventTripEdit.value=x.trip_id||"";eventDateEdit.value=x.event_date;eventCategoryEdit.value=x.category||"일정";eventTitleEdit.value=x.title;eventDescEdit.value=x.description||"";eventAuthorEdit.value=x.author_name||"";eventModalTitle.textContent="일정 수정";deleteEventBtn.hidden=false;openModal("eventModal")}
 eventFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("eventFormPublic");
- const existing=eventEditId.value;
- const id=existing?Number(existing):localNextId("events");
- const p={id,trip_id:eventTripEdit.value?Number(eventTripEdit.value):null,event_date:eventDateEdit.value,category:eventCategoryEdit.value.trim()||"일정",title:eventTitleEdit.value.trim(),description:eventDescEdit.value.trim(),author_name:eventAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
- localUpsert("events",p);selectedDate=eventDateEdit.value;closeModal("eventModal");toast(existing?"일정이 수정되었습니다.":"일정이 저장되었습니다.");await loadAll();
- if(id>0){const q={...p};delete q.id;await tryServer(()=>sb.from("travel_events").update(q).eq("id",id));}
- else{const q={...p};delete q.id;const r=await tryServer(()=>sb.from("travel_events").insert(q).select().single());if(r&&!r.error&&r.data){localDelete("events",id);localUpsert("events",r.data);await loadAll();}}
+ const existing=eventEditId.value;const id=existing?Number(existing):null;
+ const p={trip_id:eventTripEdit.value?Number(eventTripEdit.value):null,event_date:eventDateEdit.value,category:eventCategoryEdit.value.trim()||"일정",title:eventTitleEdit.value.trim(),description:eventDescEdit.value.trim(),author_name:eventAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
+ try{
+  const saved=(id&&id>0)?await apiData("travel_events","PUT",p,id):await apiData("travel_events","POST",p);
+  if(id)localDelete("events",id);if(saved)localUpsert("events",saved);selectedDate=eventDateEdit.value;
+  closeModal("eventModal");toast(existing?"일정이 수정·동기화되었습니다.":"일정이 저장·동기화되었습니다.");await loadAll();
+ }catch(err){showFormError("eventFormPublic",err)}
 }
 deleteEventBtn.onclick=async()=>{
  const id=Number(eventEditId.value);if(!id||!confirm("이 일정을 삭제하시겠습니까?"))return;
- localDelete("events",id);if(id>0)await tryServer(()=>sb.from("travel_events").delete().eq("id",id));
- closeModal("eventModal");toast("일정이 삭제되었습니다.");await loadAll();
+ try{if(id>0)await apiData("travel_events","DELETE",null,id);localDelete("events",id);closeModal("eventModal");toast("일정이 삭제·동기화되었습니다.");await loadAll()}catch(err){showFormError("eventFormPublic",err)}
 }
 
 /* 예산 CRUD */
@@ -427,23 +425,22 @@ function newBudget(){resetBudgetForm();budgetTripEdit.value=budgetTripSelect.val
 function editBudget(id){const x=budgets.find(v=>v.id===id);if(!x)return;budgetEditId.value=x.id;budgetTripEdit.value=x.trip_id||"";budgetCategoryEdit.value=x.category;budgetAmountEdit.value=x.budget_amount||0;budgetSpentEdit.value=x.spent_amount||0;budgetAuthorEdit.value=x.author_name||"";budgetModalTitle.textContent="예산 수정";deleteBudgetBtn.hidden=false;openModal("budgetModal")}
 budgetFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("budgetFormPublic");
- const existing=budgetEditId.value;
- const id=existing?Number(existing):localNextId("budgets");
- const p={id,trip_id:budgetTripEdit.value?Number(budgetTripEdit.value):null,category:budgetCategoryEdit.value,budget_amount:Number(budgetAmountEdit.value)||0,spent_amount:Number(budgetSpentEdit.value)||0,author_name:budgetAuthorEdit.value.trim(),sort_order:100,updated_at:new Date().toISOString()};
- localUpsert("budgets",p);closeModal("budgetModal");toast(existing?"예산이 수정되었습니다.":"예산이 저장되었습니다.");await loadAll();
- if(id>0){const q={...p};delete q.id;await tryServer(()=>sb.from("travel_budgets").update(q).eq("id",id));}
- else{const q={...p};delete q.id;const r=await tryServer(()=>sb.from("travel_budgets").insert(q).select().single());if(r&&!r.error&&r.data){localDelete("budgets",id);localUpsert("budgets",r.data);await loadAll();}}
+ const existing=budgetEditId.value;const id=existing?Number(existing):null;
+ const p={trip_id:budgetTripEdit.value?Number(budgetTripEdit.value):null,category:budgetCategoryEdit.value,budget_amount:Number(budgetAmountEdit.value)||0,spent_amount:Number(budgetSpentEdit.value)||0,author_name:budgetAuthorEdit.value.trim(),sort_order:100,updated_at:new Date().toISOString()};
+ try{
+  const saved=(id&&id>0)?await apiData("travel_budgets","PUT",p,id):await apiData("travel_budgets","POST",p);
+  if(id)localDelete("budgets",id);if(saved)localUpsert("budgets",saved);closeModal("budgetModal");toast(existing?"예산이 수정·동기화되었습니다.":"예산이 저장·동기화되었습니다.");await loadAll();
+ }catch(err){showFormError("budgetFormPublic",err)}
 }
 deleteBudgetBtn.onclick=async()=>{
  const id=Number(budgetEditId.value);if(!id||!confirm("이 예산 항목을 삭제하시겠습니까?"))return;
- localDelete("budgets",id);if(id>0)await tryServer(()=>sb.from("travel_budgets").delete().eq("id",id));
- closeModal("budgetModal");toast("예산이 삭제되었습니다.");await loadAll();
+ try{if(id>0)await apiData("travel_budgets","DELETE",null,id);localDelete("budgets",id);closeModal("budgetModal");toast("예산이 삭제·동기화되었습니다.");await loadAll()}catch(err){showFormError("budgetFormPublic",err)}
 }
 
 openTripCreate.onclick=newTrip;openTripCreate2.onclick=newTrip;openEventCreate.onclick=newEvent;openBudgetCreate.onclick=newBudget;
 $$(".nav a,.quick-grid a").forEach(a=>a.onclick=e=>{const id=(a.dataset.target||a.getAttribute("href")?.replace("#",""));if(id&&document.getElementById(id)){e.preventDefault();document.getElementById(id).scrollIntoView({behavior:"smooth"})}});
 globalSearchBtn.onclick=()=>{const q=globalSearch.value.trim().toLowerCase();if(!q)return;boardSearch.value=q;renderBoard();document.getElementById("board").scrollIntoView({behavior:"smooth"})};
 const ids=["home","calendar","korea","world","places","board","budget"];addEventListener("scroll",()=>{let cur="home";ids.forEach(id=>{const el=document.getElementById(id);if(el&&el.getBoundingClientRect().top<140)cur=id});$$(".nav a").forEach(a=>a.classList.toggle("active",a.dataset.target===cur))},{passive:true});
-loadAll().then(()=>migrateLegacyPlacesInBackground());
+loadAll().then(async()=>{await migrateLegacyPlacesInBackground();startAutoSync();});
 
 window.addEventListener("unhandledrejection",e=>{console.warn("Background sync failed",e.reason);e.preventDefault();});
