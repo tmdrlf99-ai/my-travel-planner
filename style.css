@@ -1439,11 +1439,15 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
 
 
 /* ===== v5.9.2 UI polish: hero alignment / mobile search / scroll nav ===== */
-/* PC: 왼쪽 검색 영역과 오른쪽 여행 기록 카드의 하단선을 자연스럽게 맞춤 */
+/* PC: 해시태그가 아니라 검색창 하단과 오른쪽 여행 기록 카드 하단을 맞춤 */
 @media(min-width:1001px){
   .hero{align-items:end!important}
   .hero-copy{align-self:end!important}
-  .hero-summary{align-self:end!important}
+  .hero-summary{
+    align-self:end!important;
+    /* 검색창 아래의 해시태그 높이 + 간격만큼 카드를 위로 올려 검색창과 하단선을 맞춘다. */
+    margin-bottom:34px!important;
+  }
 }
 
 /* 모바일: 검색 아이콘 + 입력창 + 검색버튼을 반드시 한 줄 유지 */

@@ -192,6 +192,13 @@ function renderUpcoming(){
  const cats=["교통","숙박","식비","관광·쇼핑"];budgetMini.innerHTML=cats.map(c=>{const sum=budgets.filter(x=>x.category===c).reduce((s,x)=>s+Number(x.budget_amount||0),0);return `<div><span>${c}</span><strong>${money(sum)}</strong></div>`}).join("");
 }
 function fmt(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function dateInRange(k,start,end){
+ if(!start)return false;
+ const e=end||start;
+ return k>=start&&k<=e;
+}
+function tripOnDate(x,k){return dateInRange(k,x.start_date,x.end_date)}
+function placeOnDate(x,k){return dateInRange(k,x.start_date,x.end_date)}
 function renderCalendar(){
  const y=cal.getFullYear(),m=cal.getMonth();monthTitle.textContent=`${y}년 ${m+1}월`;
  const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay()),today=fmt(new Date());
@@ -199,7 +206,7 @@ function renderCalendar(){
  for(let i=0;i<42;i++){
    const d=new Date(start);d.setDate(start.getDate()+i);
    const k=fmt(d),dow=d.getDay(),holiday=KR_HOLIDAYS_2026[k]||"";
-   const has=events.some(x=>x.event_date===k)||trips.some(x=>x.start_date===k||x.end_date===k);
+   const has=events.some(x=>x.event_date===k)||trips.some(x=>tripOnDate(x,k))||places.some(x=>placeOnDate(x,k));
    const cls=[
      "day",
      d.getMonth()!==m?"other":"",
@@ -218,11 +225,16 @@ function renderCalendar(){
 }
 function renderDay(){
  const list=[...events.filter(x=>x.event_date===selectedDate).map(x=>({id:x.id,kind:"event",type:x.category||"일정",title:x.title,sub:x.description||"",author:x.author_name||""})),
- ...trips.filter(x=>x.start_date===selectedDate).map(x=>({id:x.id,kind:"trip",type:"출발",title:x.title,sub:x.city||x.country||"",author:x.author_name||""})),
- ...trips.filter(x=>x.end_date===selectedDate).map(x=>({id:x.id,kind:"trip",type:"귀국",title:x.title,sub:x.city||x.country||"",author:x.author_name||""}))];
+ ...trips.filter(x=>tripOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"trip",type:x.start_date===selectedDate?"출발":x.end_date===selectedDate?"종료":"여행중",title:x.title,sub:x.city||x.country||x.region||"",author:x.author_name||""})),
+ ...places.filter(x=>placeOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"place",type:x.status==="버킷리스트"?"방문계획":"방문지",title:x.place_name,sub:x.memo||x.place_type||"",author:x.author_name||""}))];
  dayTitle.textContent=selectedDate?`${Number(selectedDate.slice(5,7))}월 ${Number(selectedDate.slice(8,10))}일 일정`:"선택 날짜 일정";dayCount.textContent=`${list.length}건`;
  dayEvents.innerHTML=list.length?list.map(x=>`<div class="day-event" data-kind="${x.kind}" data-id="${x.id}"><time>${esc(x.type)}</time><div><strong>${esc(x.title)}</strong><small>${esc(x.sub)}${x.author?` · 작성 ${esc(x.author)}`:""}</small></div></div>`).join(""):'<div class="empty">날짜를 선택하면 해당 일정이 표시됩니다.</div>';
- $$("#dayEvents .day-event").forEach(el=>el.onclick=()=>el.dataset.kind==="event"?editEvent(Number(el.dataset.id)):editTrip(Number(el.dataset.id)));
+ $$("#dayEvents .day-event").forEach(el=>el.onclick=()=>{
+  const id=Number(el.dataset.id);
+  if(el.dataset.kind==="event")editEvent(id);
+  else if(el.dataset.kind==="place")editPlace(id);
+  else editTrip(id);
+ });
 }
 prevMonth.onclick=()=>{cal.setMonth(cal.getMonth()-1);renderCalendar()};nextMonth.onclick=()=>{cal.setMonth(cal.getMonth()+1);renderCalendar()};todayMonth.onclick=()=>{cal=new Date();renderCalendar()};
 function ensureKoreaMap(){
@@ -332,12 +344,13 @@ function renderPlaces(){
 function resetPlaceForm(){
  placeFormPublic.reset();placeEditId.value="";placeModalTitle.textContent="방문지 등록";deletePlaceBtn.hidden=true;
  placeTypeEdit.value="국내";placeStatusEdit.value="방문";populatePlaceNames("국내");
+ placeStartEdit.value=fmt(new Date());placeEndEdit.value="";
 }
 function newPlace(){resetPlaceForm();openModal("placeModal")}
 function editPlace(id){
  const x=places.find(v=>v.id===id);if(!x)return;
  placeEditId.value=x.id;placeTypeEdit.value=x.place_type;placeStatusEdit.value=x.status;
- populatePlaceNames(x.place_type,x.place_name);placeAuthorEdit.value=x.author_name||"";placeMemoEdit.value=x.memo||"";
+ populatePlaceNames(x.place_type,x.place_name);placeStartEdit.value=x.start_date||"";placeEndEdit.value=x.end_date||"";placeAuthorEdit.value=x.author_name||"";placeMemoEdit.value=x.memo||"";
  placeModalTitle.textContent="방문지 수정";deletePlaceBtn.hidden=false;openModal("placeModal");
 }
 placeTypeEdit.onchange=()=>populatePlaceNames(placeTypeEdit.value);
@@ -347,7 +360,9 @@ placeFormPublic.onsubmit=async e=>{
  const type=placeTypeEdit.value,name=placeNameEdit.value,coord=(PLACE_PRESETS[type]||{})[name];
  if(!coord)return;
  const now=new Date().toISOString();
- const p={place_type:type,status:placeStatusEdit.value,place_name:name,latitude:coord[0],longitude:coord[1],author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:now};
+ const startDate=placeStartEdit.value||null,endDate=placeEndEdit.value||startDate;
+ if(startDate&&endDate&&endDate<startDate){showFormError("placeFormPublic",new Error("종료일은 방문/계획일보다 빠를 수 없습니다."));return}
+ const p={place_type:type,status:placeStatusEdit.value,place_name:name,latitude:coord[0],longitude:coord[1],start_date:startDate,end_date:endDate,author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:now};
  try{
   let saved;
   if(id&&id>0) saved=await apiData("travel_places","PUT",p,id);
@@ -404,7 +419,9 @@ function editTrip(id){const x=trips.find(v=>v.id===id);if(!x)return;tripEditId.v
 tripFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("tripFormPublic");
  const existing=tripEditId.value;const id=existing?Number(existing):null;
- const p={trip_type:tripTypeEdit.value,status:tripStatusEdit.value,title:tripTitleEdit.value.trim(),start_date:tripStartEdit.value||null,end_date:tripEndEdit.value||null,region:tripRegionEdit.value.trim(),city:tripCityEdit.value.trim(),country:tripCountryEdit.value.trim(),memo:tripMemoEdit.value.trim(),author_name:tripAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
+ const tripStart=tripStartEdit.value||null,tripEnd=tripEndEdit.value||tripStart;
+ if(tripStart&&tripEnd&&tripEnd<tripStart){showFormError("tripFormPublic",new Error("종료일은 시작일보다 빠를 수 없습니다."));return}
+ const p={trip_type:tripTypeEdit.value,status:tripStatusEdit.value,title:tripTitleEdit.value.trim(),start_date:tripStart,end_date:tripEnd,region:tripRegionEdit.value.trim(),city:tripCityEdit.value.trim(),country:tripCountryEdit.value.trim(),memo:tripMemoEdit.value.trim(),author_name:tripAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
  try{
   const saved=(id&&id>0)?await apiData("travel_trips","PUT",p,id):await apiData("travel_trips","POST",p);
   if(id)localDelete("trips",id);if(saved)localUpsert("trips",saved);
