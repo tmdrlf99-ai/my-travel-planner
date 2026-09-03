@@ -533,3 +533,87 @@ html,body,button,input,select,textarea,
     font-size:13px !important;
   }
 }
+
+
+/* ===== v5.3 달력 날짜 좌측 상단 정렬 ===== */
+.calendar-grid .day{
+  position:relative !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+  text-align:left !important;
+  padding:10px 9px !important;
+  gap:3px !important;
+}
+
+.calendar-grid .day > span:first-child{
+  display:block !important;
+  width:100% !important;
+  margin:0 !important;
+  padding:0 !important;
+  text-align:left !important;
+  line-height:1.2 !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+}
+
+.calendar-grid .day .holiday-name{
+  display:block !important;
+  margin:1px 0 0 0 !important;
+  padding:0 !important;
+  text-align:left !important;
+  line-height:1.25 !important;
+  font-size:10px !important;
+  white-space:normal !important;
+  overflow:visible !important;
+  text-overflow:clip !important;
+}
+
+/* 일반 날짜 색상 */
+.calendar-grid .day:not(.sunday):not(.saturday):not(.holiday) > span:first-child{
+  color:#294b5e !important;
+}
+
+/* 일요일과 공휴일은 빨강 */
+.calendar-grid .day.sunday > span:first-child,
+.calendar-grid .day.holiday > span:first-child{
+  color:#d94b4b !important;
+}
+
+/* 일반 토요일만 파랑 */
+.calendar-grid .day.saturday:not(.holiday) > span:first-child{
+  color:#3578d4 !important;
+}
+
+/* 다른 달 날짜는 연하게, 단 공휴일/토요일 색조는 유지 */
+.calendar-grid .day.other:not(.sunday):not(.saturday):not(.holiday) > span:first-child{
+  color:#c7d0d5 !important;
+}
+.calendar-grid .day.other.sunday > span:first-child,
+.calendar-grid .day.other.holiday > span:first-child{
+  color:#e6a3a3 !important;
+}
+.calendar-grid .day.other.saturday:not(.holiday) > span:first-child{
+  color:#9ab8e4 !important;
+}
+
+/* 오늘/선택일도 좌상단 배치 유지 */
+.calendar-grid .day.today,
+.calendar-grid .day.selected{
+  align-items:flex-start !important;
+  justify-content:flex-start !important;
+}
+
+/* 모바일도 동일 원칙 유지 */
+@media(max-width:720px){
+  .calendar-grid .day{
+    padding:8px 7px !important;
+  }
+  .calendar-grid .day > span:first-child{
+    font-size:12px !important;
+  }
+  .calendar-grid .day .holiday-name{
+    font-size:9px !important;
+  }
+}
