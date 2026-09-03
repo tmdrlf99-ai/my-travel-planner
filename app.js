@@ -1007,58 +1007,50 @@ deleteBudgetBtn.onclick=async()=>{
 openTripCreate.onclick=newTrip;openTripCreate2.onclick=newTrip;openEventCreate.onclick=newEvent;openBudgetCreate.onclick=newBudget;
 const NAV_IDS=["home","calendar","korea","world","places","board","budget"];
 let __activeNavId="home";
-let __lastNavScrollY=window.scrollY;
+let __lastNavScrollY=Math.max(0,window.scrollY);
 let __navManualLockUntil=0;
 function setActiveNav(id){
  __activeNavId=id||__activeNavId;
  $$(".nav a").forEach(a=>a.classList.toggle("active",a.dataset.target===__activeNavId));
 }
-function updateActiveNav(){
- if(Date.now()<__navManualLockUntil){__lastNavScrollY=Math.max(0,window.scrollY);return;}
- const y=Math.max(0,window.scrollY);
- const scrollingUp=y<__lastNavScrollY-2;
- const scrollingDown=y>__lastNavScrollY+2;
- __lastNavScrollY=y;
- const currentIndex=Math.max(0,NAV_IDS.indexOf(__activeNavId));
- const desktop=window.innerWidth>820;
- // 내려갈 때는 화면 상단에서 약간 여유를 둔 지점에서 다음 메뉴로 전환합니다.
- // 올라갈 때는 현재 섹션이 화면의 절반 가까이 아래로 내려온 뒤에야 이전 메뉴로 바꿔
- // 왼쪽 위치 표시가 너무 성급하게 위로 이동하지 않도록 히스테리시스를 둡니다.
- const downAnchor=desktop?150:96;
- const upAnchor=desktop?Math.min(430,window.innerHeight*0.48):Math.min(300,window.innerHeight*0.42);
-
- if(scrollingUp&&currentIndex>0){
-  const currentEl=document.getElementById(NAV_IDS[currentIndex]);
-  if(currentEl&&currentEl.getBoundingClientRect().top>upAnchor){
-   // 한 번에 여러 메뉴를 건너뛰지 않고 직전 섹션으로만 이동합니다.
-   setActiveNav(NAV_IDS[currentIndex-1]);
-  }
-  return;
- }
-
- if(scrollingDown||!document.querySelector('.nav a.active')){
-  let candidate=0;
-  for(let i=0;i<NAV_IDS.length;i++){
-   const el=document.getElementById(NAV_IDS[i]);if(!el)continue;
-   if(el.getBoundingClientRect().top<=downAnchor) candidate=i;
-   else break;
-  }
-  // 아래로 갈 때는 활성 메뉴가 뒤로 되돌아가지 않게 하고,
-  // '지역별 일정' 같은 짧은 섹션도 한 단계씩 반드시 거쳐갑니다.
-  if(candidate>currentIndex){
-   const nextIndex=Math.min(candidate,currentIndex+1);
-   setActiveNav(NAV_IDS[nextIndex]);
-  }
-  return;
- }
-
- // 리사이즈·초기 로드 등 스크롤 방향이 없는 경우 현재 화면 기준으로 보정합니다.
+function navSectionIndexAtDocumentY(documentY){
  let candidate=0;
  for(let i=0;i<NAV_IDS.length;i++){
-  const el=document.getElementById(NAV_IDS[i]);if(!el)continue;
-  if(el.getBoundingClientRect().top<=downAnchor) candidate=i;
+  const el=document.getElementById(NAV_IDS[i]);
+  if(!el)continue;
+  const top=el.getBoundingClientRect().top+window.scrollY;
+  if(top<=documentY) candidate=i;
   else break;
  }
+ return candidate;
+}
+function updateActiveNav(){
+ const y=Math.max(0,window.scrollY);
+ if(Date.now()<__navManualLockUntil){__lastNavScrollY=y;return;}
+ const delta=y-__lastNavScrollY;
+ const scrollingUp=delta<-1;
+ const scrollingDown=delta>1;
+ __lastNavScrollY=y;
+ const desktop=window.innerWidth>820;
+ const viewportH=Math.max(1,window.innerHeight);
+ const doc=document.documentElement;
+ const maxScroll=Math.max(0,doc.scrollHeight-viewportH);
+ const distanceToBottom=Math.max(0,maxScroll-y);
+
+ // 핵심: 화면 안의 '판정선'을 실제로 점유한 섹션을 현재 위치로 봅니다.
+ // 아래로 갈 때는 약 36% 지점, 위로 올릴 때는 약 62% 지점에서 판정합니다.
+ // 따라서 위로 올릴 때는 이전 섹션이 화면 대부분을 차지하기 전까지 현재 메뉴가 유지됩니다.
+ const focusRatio=desktop?(scrollingUp?0.62:scrollingDown?0.36:0.48):(scrollingUp?0.56:scrollingDown?0.34:0.46);
+ const focusDocumentY=y+viewportH*focusRatio;
+ let candidate=navSectionIndexAtDocumentY(focusDocumentY);
+
+ // 마지막 섹션은 문서 끝 때문에 제목이 판정선까지 올라오지 못할 수 있습니다.
+ // 실제 최하단에 도달하면 반드시 '예산'을 현재 위치로 표시합니다.
+ if(distanceToBottom<=Math.max(18,viewportH*0.025)) candidate=NAV_IDS.length-1;
+
+ // 맨 위에서는 홈을 확실하게 유지합니다.
+ if(y<=4) candidate=0;
+
  setActiveNav(NAV_IDS[candidate]);
 }
 $$(".nav a,.quick-grid a").forEach(a=>a.onclick=e=>{
