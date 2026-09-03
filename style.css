@@ -1822,3 +1822,64 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
   text-align:right;
 }
 @media(hover:none),(pointer:coarse){.calendar-hover-tooltip{display:none!important}}
+
+/* ===== v6.0.15 LARGE CUTE ICONS ===== */
+/* 홈 퀵메뉴: 아이콘을 확실히 보이도록 크게 */
+.quick-icon{
+  width:58px !important;
+  height:58px !important;
+  min-width:58px !important;
+  border-radius:17px !important;
+  font-size:31px !important;
+  line-height:1 !important;
+  font-weight:400 !important;
+}
+.quick-grid a{
+  gap:14px !important;
+  padding:16px 15px !important;
+}
+
+/* 좌측 메뉴: 작은 기호 크기에서 실제 이모지 아이콘 크기로 확대 */
+.nav a b{
+  width:34px !important;
+  height:34px !important;
+  min-width:34px !important;
+  border-radius:10px !important;
+  font-size:21px !important;
+  line-height:1 !important;
+  font-weight:400 !important;
+}
+.nav a{
+  gap:11px !important;
+  padding:8px 10px !important;
+}
+
+@media(max-width:1000px){
+  .quick-icon{
+    width:54px !important;
+    height:54px !important;
+    min-width:54px !important;
+    font-size:29px !important;
+  }
+}
+
+@media(max-width:720px){
+  .quick-icon{
+    width:50px !important;
+    height:50px !important;
+    min-width:50px !important;
+    font-size:27px !important;
+    border-radius:15px !important;
+  }
+  .nav a b{
+    width:30px !important;
+    height:30px !important;
+    min-width:30px !important;
+    font-size:18px !important;
+    background:transparent !important;
+  }
+  .nav a{
+    gap:2px !important;
+    padding:2px !important;
+  }
+}
