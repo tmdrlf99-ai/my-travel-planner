@@ -1642,3 +1642,37 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
   .travel-map-legend{left:9px;bottom:24px;padding:6px 8px;gap:6px}
   .map-region-list{max-height:250px}
 }
+
+/* ===== v6.0.1 SUMMARY / CALENDAR HOVER / SIDEBAR TYPE FIX ===== */
+/* 왼쪽 여행 관리 메뉴: 데스크톱에서 한 단계 크게 */
+@media(min-width:721px){
+  .side-caption{
+    font-size:10px !important;
+    font-weight:700 !important;
+  }
+  .nav a{
+    font-size:13px !important;
+  }
+  .nav a b{
+    font-size:10px !important;
+  }
+}
+
+/* 달력 날짜 셀: 좌측 메뉴 hover와 같은 계열의 가벼운 인터랙션 */
+.calendar-grid .day{
+  cursor:pointer !important;
+  transition:background-color .16s ease, box-shadow .16s ease, color .16s ease !important;
+}
+.calendar-grid .day:hover{
+  background:#f4fafb !important;
+  box-shadow:inset 0 0 0 1px #c9e1e6 !important;
+  z-index:2;
+}
+.calendar-grid .day.today:hover{
+  background:#e8f7f2 !important;
+  box-shadow:inset 0 0 0 2px #72c7ae !important;
+}
+.calendar-grid .day.selected:hover{
+  background:#e9f5fc !important;
+  box-shadow:inset 0 0 0 2px #80bfe4 !important;
+}
