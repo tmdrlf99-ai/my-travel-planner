@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>My Travel Planner</title>
   <link rel="stylesheet" href="style.css"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"/>
 </head>
 <body>
 <div class="app-shell">
@@ -109,27 +109,61 @@
       </section>
 
       <section id="korea" class="panel section">
-        <div class="section-head"><span>KOREA MAP</span><h2>국내 여행 지도</h2><p>방문했거나 예정인 국내 지역을 지도에서 확인합니다.</p></div>
+        <div class="section-head"><span>KOREA MAP</span><h2>국내 여행 지도</h2><p>방문지 관리에서 직접 등록한 국내 방문지와 버킷리스트를 확인합니다.</p></div>
         <div class="map-layout">
           <div id="koreaRealMap" class="korea-real-map" aria-label="대한민국 실제 지도"></div>
 <div class="map-info">
             <span>REGION</span><h3 id="koreaRegion">지역을 선택해 주세요</h3>
-            <p id="koreaDesc">지도에서 지역을 선택하면 등록된 여행과 방문 기록을 보여드립니다.</p>
+            <p id="koreaDesc">지도 마커를 선택하면 등록한 방문지 정보를 보여드립니다.</p>
             <div id="koreaTripList" class="mini-trip-list"></div>
           </div>
         </div>
       </section>
 
       <section id="world" class="panel section">
-        <div class="section-head"><span>WORLD MAP</span><h2>세계 여행 지도</h2><p>방문 국가와 가고 싶은 곳을 기록합니다.</p></div>
+        <div class="section-head"><span>WORLD MAP</span><h2>세계 여행 지도</h2><p>방문지 관리에서 직접 등록한 해외 방문지와 버킷리스트를 확인합니다.</p></div>
         <div class="world-layout">
           <div id="worldRealMap" class="world-real-map" aria-label="세계 실제 지도"></div>
           <div class="map-info">
             <span>COUNTRY</span><h3 id="worldCountry">국가를 선택해 주세요</h3>
-            <p id="worldDesc">지도에서 방문 국가나 버킷리스트 국가를 선택해보세요.</p>
+            <p id="worldDesc">지도 마커를 선택하면 등록한 해외 방문지 정보를 보여드립니다.</p>
             <div id="worldTripList" class="mini-trip-list"></div>
           </div>
         </div>
+      </section>
+
+
+      <section id="places" class="panel section">
+        <div class="section-head section-head-actions">
+          <div>
+            <span>PLACE MANAGER</span>
+            <h2>방문지 관리</h2>
+            <p>국내·해외 방문지와 버킷리스트를 직접 등록하면 지도에 반영됩니다.</p>
+          </div>
+          <button id="openPlaceCreate" class="soft-action">+ 방문지 등록</button>
+        </div>
+
+        <div class="place-summary-grid">
+          <div><span>국내 방문</span><strong id="domesticVisitedCount">0</strong></div>
+          <div><span>국내 버킷</span><strong id="domesticBucketCount">0</strong></div>
+          <div><span>해외 방문</span><strong id="overseasVisitedCount">0</strong></div>
+          <div><span>해외 버킷</span><strong id="overseasBucketCount">0</strong></div>
+        </div>
+
+        <div class="place-tools">
+          <select id="placeTypeFilter">
+            <option value="">국내·해외 전체</option>
+            <option value="국내">국내</option>
+            <option value="해외">해외</option>
+          </select>
+          <select id="placeStatusFilter">
+            <option value="">방문·버킷 전체</option>
+            <option value="방문">방문</option>
+            <option value="버킷리스트">버킷리스트</option>
+          </select>
+          <input id="placeSearch" placeholder="방문지 검색"/>
+        </div>
+        <div id="placeList" class="place-list"></div>
       </section>
 
       <section id="board" class="panel section">
@@ -238,9 +272,44 @@
   </form>
 </section>
 
-<div id="toast" class="toast" hidden></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<section id="placeModal" class="editor-modal" hidden>
+  <div class="modal-head">
+    <div><span>PLACE EDITOR</span><h3 id="placeModalTitle">방문지 등록</h3></div>
+    <button class="modal-close" data-close="placeModal">×</button>
+  </div>
+  <form id="placeFormPublic">
+    <input id="placeEditId" type="hidden"/>
+    <div class="two-col">
+      <label>구분
+        <select id="placeTypeEdit">
+          <option value="국내">국내</option>
+          <option value="해외">해외</option>
+        </select>
+      </label>
+      <label>상태
+        <select id="placeStatusEdit">
+          <option value="방문">방문</option>
+          <option value="버킷리스트">버킷리스트</option>
+        </select>
+      </label>
+    </div>
+    <label>방문지
+      <select id="placeNameEdit"></select>
+    </label>
+    <label>작성자명<input id="placeAuthorEdit" required placeholder="예: 문경섭"/></label>
+    <label>메모<textarea id="placeMemoEdit" placeholder="언제 갔는지, 가고 싶은 이유 등"></textarea></label>
+    <div class="modal-actions">
+      <button type="button" id="deletePlaceBtn" class="danger-btn" hidden>삭제</button>
+      <div></div>
+      <button type="button" class="ghost-action" data-close="placeModal">취소</button>
+      <button class="save-action">저장</button>
+    </div>
+  </form>
+</section>
+
+<div id="toast" class="toast" hidden></div>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>

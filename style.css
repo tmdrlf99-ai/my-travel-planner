@@ -279,3 +279,119 @@ body{font-size:17px!important}
 @media(max-width:720px){
   .world-real-map{min-height:360px}
 }
+
+
+/* ===== v5 MapLibre + 방문지 관리 ===== */
+.korea-real-map,.world-real-map{
+  min-height:440px;
+  width:100%;
+  border-radius:18px;
+  overflow:hidden;
+  background:#eef5f2;
+  border:1px solid #dbe6e4;
+  position:relative;
+}
+.maplibregl-map{font:inherit!important}
+.maplibregl-ctrl-attrib{font-size:9px!important}
+.maplibregl-popup-content{
+  border-radius:12px!important;
+  padding:11px 13px!important;
+  font-family:inherit!important;
+  font-size:12px!important;
+  color:#2d4d60!important;
+}
+.maplibregl-popup-content b{font-size:13px!important}
+.maplibregl-ctrl-group button{width:32px!important;height:32px!important}
+
+.place-marker{
+  width:18px;height:18px;border-radius:50%;
+  border:3px solid #fff;
+  box-shadow:0 2px 9px rgba(55,91,80,.30);
+  cursor:pointer;
+}
+.place-marker.visited{background:#5ebf9f}
+.place-marker.bucket{background:#f0a774}
+.place-marker.selected{outline:3px solid rgba(65,105,130,.24);outline-offset:2px}
+
+.place-summary-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin:14px 0;
+}
+.place-summary-grid>div{
+  padding:15px 16px;
+  border:1px solid #dfe9ec;
+  border-radius:15px;
+  background:linear-gradient(145deg,#fbfefd,#f7fbff);
+}
+.place-summary-grid span{
+  display:block;
+  font-size:11.5px!important;
+  color:#7b929d;
+  font-weight:800;
+}
+.place-summary-grid strong{
+  display:block;
+  margin-top:5px;
+  font-size:22px!important;
+  color:#2f5366;
+}
+.place-tools{
+  display:grid;
+  grid-template-columns:180px 180px 1fr;
+  gap:9px;
+  margin-bottom:10px;
+}
+.place-tools select,.place-tools input{
+  border:1px solid #dbe6ea;
+  border-radius:11px;
+  background:#fff;
+  padding:10px 12px;
+  font-size:12.5px!important;
+  color:#496675;
+}
+.place-list{
+  border-top:1px solid #e5ecef;
+}
+.place-row{
+  display:grid;
+  grid-template-columns:90px 105px minmax(160px,1fr) minmax(160px,1fr) 120px;
+  gap:10px;
+  align-items:center;
+  min-height:54px;
+  border-bottom:1px solid #edf1f3;
+  padding:8px 4px;
+  cursor:pointer;
+}
+.place-row:hover{background:#fafdfd}
+.place-row span,.place-row small{font-size:11.5px!important}
+.place-row b{font-size:13.5px!important;color:#36596a}
+.place-status{
+  display:inline-flex;
+  justify-content:center;
+  width:max-content;
+  min-width:70px;
+  border-radius:999px;
+  padding:5px 9px;
+  font-size:10.5px!important;
+  font-weight:900;
+}
+.place-status.visited{background:#eaf8f2;color:#48977d}
+.place-status.bucket{background:#fff2e8;color:#c67f50}
+.map-legend{
+  display:flex;gap:14px;align-items:center;margin-top:12px;
+  font-size:11px;color:#6c838d;
+}
+.map-legend i{
+  display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;
+}
+.map-legend .visited{background:#5ebf9f}
+.map-legend .bucket{background:#f0a774}
+@media(max-width:780px){
+  .place-summary-grid{grid-template-columns:repeat(2,1fr)}
+  .place-tools{grid-template-columns:1fr}
+  .place-row{grid-template-columns:70px 90px 1fr}
+  .place-row .place-memo,.place-row .place-author{display:none}
+  .korea-real-map,.world-real-map{min-height:370px}
+}
