@@ -644,26 +644,23 @@ function renderHero(){
  sideNextDates.textContent=next?`${next.start_date} ~ ${next.end_date||next.start_date}`:"새 여행을 등록해 보세요.";
  if(next){const d=Math.ceil((new Date(next.start_date+"T00:00:00")-new Date(now.toDateString()))/86400000);sideNextDday.textContent=d>=0?`D-${d}`:"여행중"}else sideNextDday.textContent="READY";
  statTrips.textContent=trips.length;
- // 방문 지역은 "등록 여행의 도시 수"가 아니라 방문지 관리의 실제 방문 기록을 기준으로 계산합니다.
- // 동일 시·군/구가 여러 번 등록되어도 1곳으로 집계하며, 완료 여행은 방문지 자동등록이 누락된 경우만 보완 집계합니다.
- const domesticVisitedKeys=new Set(
+ // 방문 지역은 시·군·구 개수가 아니라 상위 시·도 기준으로 집계합니다.
+ // 예: 서울 종로구·마포구·영등포구를 모두 방문해도 "서울" 1개 지역으로 계산합니다.
+ const domesticVisitedRegions=new Set(
    places
      .filter(x=>x.place_type==="국내"&&x.status==="방문")
-     .flatMap(x=>{
+     .map(x=>{
        const region=normalizeRegionKey(x.region_name||"");
-       const cities=placeCities(x);
-       const legacy=String(x.place_name||"").trim();
-       return cities.length?cities.map(city=>`${region||legacy}::${city}`):[(region||legacy)].filter(Boolean);
+       const legacy=normalizeRegionKey(String(x.place_name||"").trim());
+       return region||legacy;
      })
-     .filter(Boolean)
+     .filter(region=>region&&KR_REGION_CITIES[region])
  );
  trips.filter(x=>x.trip_type==="국내"&&x.status==="완료").forEach(x=>{
    const region=normalizeRegionKey(x.region||"");
-   const city=String(x.city||"").trim();
-   const key=city?`${region||"국내"}::${city}`:region;
-   if(key)domesticVisitedKeys.add(key);
+   if(region&&KR_REGION_CITIES[region])domesticVisitedRegions.add(region);
  });
- statCities.textContent=domesticVisitedKeys.size;
+ statCities.textContent=domesticVisitedRegions.size;
 
  const visitedCountries=new Set(
    places.filter(x=>x.place_type==="해외"&&x.status==="방문").map(x=>x.place_name).filter(Boolean)
