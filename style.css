@@ -1883,3 +1883,12 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
     padding:2px !important;
   }
 }
+
+
+/* ===== v6.0.16 KOREAN WORD WRAP FIX ===== */
+/* 카드 설명에서 '관리', '한눈에' 같은 단어가 글자 단위로 찢어지지 않도록 함 */
+.quick-grid p{
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  line-break: strict !important;
+}
