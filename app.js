@@ -782,6 +782,34 @@ function dateInRange(k,start,end){
 }
 function tripOnDate(x,k){return dateInRange(k,x.start_date,x.end_date)}
 function placeOnDate(x,k){return dateInRange(k,x.start_date,x.end_date)}
+function compactTripLocation(x){
+ if(!x)return "";
+ if(x.trip_type==="국내"){
+  const region=normalizeRegionKey(x.region||"");
+  return [region,x.city].map(v=>String(v||"").trim()).filter(Boolean).join(" · ");
+ }
+ return [x.country,x.city].map(v=>String(v||"").trim()).filter(Boolean).join(" · ");
+}
+function compactPlaceLocation(x){
+ if(!x)return "";
+ const cities=placeCities(x);
+ const first=cities[0]||String(x.city_name||"").trim();
+ const extra=Math.max(0,cities.length-1);
+ const parent=x.place_type==="국내"?normalizeRegionKey(x.region_name||""):String(x.place_name||"").trim();
+ const base=[parent,first].filter(Boolean).join(" · ");
+ return base+(extra?` +${extra}`:"");
+}
+function calendarLocationLabels(k){
+ const labels=[];
+ const add=value=>{const v=String(value||"").trim();if(v&&!labels.includes(v))labels.push(v)};
+ trips.filter(x=>tripOnDate(x,k)).forEach(x=>add(compactTripLocation(x)));
+ places.filter(x=>placeOnDate(x,k)).forEach(x=>add(compactPlaceLocation(x)));
+ events.filter(x=>x.event_date===k&&x.trip_id).forEach(event=>{
+  const trip=trips.find(x=>String(x.id)===String(event.trip_id));
+  if(trip)add(compactTripLocation(trip));
+ });
+ return labels;
+}
 function renderCalendar(){
  const y=cal.getFullYear(),m=cal.getMonth();monthTitle.textContent=`${y}년 ${m+1}월`;
  const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay()),today=fmt(new Date());
@@ -790,6 +818,9 @@ function renderCalendar(){
    const d=new Date(start);d.setDate(start.getDate()+i);
    const k=fmt(d),dow=d.getDay(),holiday=getKoreanHolidays(d.getFullYear())[k]||"";
    const has=events.some(x=>x.event_date===k)||trips.some(x=>tripOnDate(x,k))||places.some(x=>placeOnDate(x,k));
+   const locationLabels=has?calendarLocationLabels(k):[];
+   const primaryLocation=locationLabels[0]||"";
+   const moreLocations=Math.max(0,locationLabels.length-1);
    const cls=[
      "day",
      d.getMonth()!==m?"other":"",
@@ -800,7 +831,8 @@ function renderCalendar(){
      dow===6?"saturday":"",
      holiday?"holiday":""
    ].filter(Boolean).join(" ");
-   html+=`<button class="${cls}" data-date="${k}" title="${holiday||""}"><span>${d.getDate()}</span>${holiday?`<small class="holiday-name">${esc(holiday)}</small>`:""}</button>`;
+   const dayTitleText=[holiday,...locationLabels].filter(Boolean).join(" / ");
+   html+=`<button class="${cls}" data-date="${k}" title="${esc(dayTitleText)}"><span>${d.getDate()}</span>${holiday?`<small class="holiday-name">${esc(holiday)}</small>`:""}${primaryLocation?`<small class="day-location">${esc(primaryLocation)}${moreLocations?` <b>+${moreLocations}</b>`:""}</small>`:""}</button>`;
  }
  calendarGrid.innerHTML=html;
  $$(".day").forEach(b=>b.onclick=()=>{selectedDate=selectedDate===b.dataset.date?"":b.dataset.date;renderCalendar()});

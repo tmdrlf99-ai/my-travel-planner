@@ -1723,3 +1723,43 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
 .board-row .board-location small{font-size:11px!important;line-height:1.25!important;}
 .board-row .board-location strong,.board-row .board-location small{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
 @media(max-width:720px){.board-row .board-location{display:none!important;}}
+
+
+/* ===== v6.0.11 calendar location summary ===== */
+.calendar-grid .day .day-location{
+  position:absolute;
+  left:7px;
+  right:18px;
+  bottom:7px;
+  display:block;
+  margin:0;
+  overflow:hidden;
+  color:#567785;
+  font-size:8.5px!important;
+  font-weight:750;
+  line-height:1.2;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  pointer-events:none;
+}
+.calendar-grid .day .day-location b{
+  display:inline;
+  padding:1px 4px;
+  border-radius:999px;
+  background:#edf7f4;
+  color:#4e8f7c;
+  font-size:7px;
+  font-weight:900;
+}
+.calendar-grid .day.other .day-location{opacity:.5}
+.calendar-grid .day.today .day-location,
+.calendar-grid .day.selected .day-location{color:#315f70}
+@media(max-width:720px){
+  .calendar-grid .day .day-location{
+    left:4px;
+    right:13px;
+    bottom:4px;
+    font-size:6.5px!important;
+  }
+  .calendar-grid .day .day-location b{font-size:6px;padding:0 2px}
+}
