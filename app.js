@@ -203,10 +203,17 @@ function syncTripLocationFields(region="",city="",country=""){
  }
  tripCountryEdit.required=true;
 }
+const placeCities=x=>{
+ const arr=Array.isArray(x?.city_names)?x.city_names:[];
+ const cleaned=arr.map(v=>String(v||"").trim()).filter(Boolean);
+ if(cleaned.length)return [...new Set(cleaned)];
+ const legacy=String(x?.city_name||"").trim();
+ return legacy?[legacy]:[];
+};
 const domesticPlaceText=x=>{
- const r=x.region_name||"", c=x.city_name||"";
- if(r&&c) return `${regionLabel(r)} · ${c}`;
- return x.place_name||r||c||"";
+ const r=x.region_name||"", cities=placeCities(x);
+ if(r&&cities.length) return `${regionLabel(r)} · ${cities.join(" · ")}`;
+ return x.place_name||r||cities.join(" · ")||"";
 };
 
 const KR_LUNAR_HOLIDAY_DATES={
@@ -416,8 +423,9 @@ function domesticMunicipalityStatus(region,city){
  const rows=places.filter(x=>{
    if(x.place_type!=='국내')return false;
    const rowRegion=normalizeRegionKey(x.region_name||((PLACE_PRESETS['국내']||{})[x.place_name]?x.place_name:''));
-   const rowCity=String(x.city_name||((x.region_name&&x.place_name!==x.region_name)?x.place_name:'')).trim();
-   return rowRegion===region&&rowCity===city;
+   const rowCities=placeCities(x);
+   const legacyCity=(!rowCities.length&&x.region_name&&x.place_name!==x.region_name)?String(x.place_name||'').trim():'';
+   return rowRegion===region&&(rowCities.includes(city)||legacyCity===city);
  });
  if(rows.some(x=>x.status==='방문'))return 'visited';
  if(rows.some(x=>x.status==='버킷리스트'))return 'bucket';
@@ -476,8 +484,9 @@ function showKoreaMunicipality(region,city){
  const placeRows=places.filter(x=>{
    if(x.place_type!=='국내')return false;
    const rowRegion=normalizeRegionKey(x.region_name||((PLACE_PRESETS['국내']||{})[x.place_name]?x.place_name:''));
-   const rowCity=String(x.city_name||((x.region_name&&x.place_name!==x.region_name)?x.place_name:'')).trim();
-   return rowRegion===selectedKoreaRegion&&rowCity===selectedKoreaCity;
+   const rowCities=placeCities(x);
+   const legacyCity=(!rowCities.length&&x.region_name&&x.place_name!==x.region_name)?String(x.place_name||'').trim():'';
+   return rowRegion===selectedKoreaRegion&&(rowCities.includes(selectedKoreaCity)||legacyCity===selectedKoreaCity);
  });
  const tripRows=trips.filter(x=>x.trip_type==='국내'&&normalizeRegionKey(x.region)===selectedKoreaRegion&&String(x.city||'').trim()===selectedKoreaCity).sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
  const st=domesticMunicipalityStatus(selectedKoreaRegion,selectedKoreaCity);
@@ -592,6 +601,7 @@ function completedTripPlacePayload(x){
    place_name:placeName,
    region_name:region,
    city_name:city,
+   city_names:city?[city]:[],
    latitude:coord[0],
    longitude:coord[1],
    start_date:x.start_date||x.end_date||null,
@@ -639,11 +649,11 @@ function renderHero(){
  const domesticVisitedKeys=new Set(
    places
      .filter(x=>x.place_type==="국내"&&x.status==="방문")
-     .map(x=>{
+     .flatMap(x=>{
        const region=normalizeRegionKey(x.region_name||"");
-       const city=String(x.city_name||"").trim();
+       const cities=placeCities(x);
        const legacy=String(x.place_name||"").trim();
-       return city?`${region||legacy}::${city}`:(region||legacy);
+       return cities.length?cities.map(city=>`${region||legacy}::${city}`):[(region||legacy)].filter(Boolean);
      })
      .filter(Boolean)
  );
@@ -744,9 +754,15 @@ function markerElement(status){
 function renderKoreaFallbackMarkers(){
  if(!koreaMap)return;clearMapMarkers(koreaMapMarkers);
  places.filter(x=>x.place_type==='국내').forEach(x=>{
-   if(!Number.isFinite(Number(x.longitude))||!Number.isFinite(Number(x.latitude)))return;
-   const el=markerElement(x.status),marker=new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([Number(x.longitude),Number(x.latitude)]).addTo(koreaMap);
-   el.addEventListener('click',()=>{const region=normalizeRegionKey(x.region_name||x.place_name),city=String(x.city_name||'').trim();city?showKoreaMunicipality(region,city):showKoreaRegion(region)});koreaMapMarkers.push(marker);
+   const region=normalizeRegionKey(x.region_name||x.place_name),cities=placeCities(x);
+   const targets=cities.length?cities:[""];
+   targets.forEach(city=>{
+     const coord=city?(KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]):[Number(x.latitude),Number(x.longitude)];
+     const lat=city?coord?.[0]:Number(x.latitude),lng=city?coord?.[1]:Number(x.longitude);
+     if(!Number.isFinite(Number(lat))||!Number.isFinite(Number(lng)))return;
+     const el=markerElement(x.status),marker=new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([Number(lng),Number(lat)]).addTo(koreaMap);
+     el.addEventListener('click',()=>city?showKoreaMunicipality(region,city):showKoreaRegion(region));koreaMapMarkers.push(marker);
+   });
  });
 }
 function renderKorea(){
@@ -793,28 +809,32 @@ function renderWorld(){
 }
 
 
-function populatePlaceCities(region,current=""){
+function selectedPlaceCities(){
+ return [...placeCityEdit.querySelectorAll('input[type="checkbox"]:checked')].map(el=>el.value);
+}
+function populatePlaceCities(region,current=[]){
  const cities=KR_REGION_CITIES[region]||[];
- placeCityEdit.innerHTML=cities.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
- if(current&&cities.includes(current)) placeCityEdit.value=current;
+ const selected=new Set(Array.isArray(current)?current:(current?[current]:[]));
+ placeCityEdit.innerHTML=cities.map(c=>`<label class="multi-city-option"><input type="checkbox" value="${esc(c)}" ${selected.has(c)?"checked":""}/><span>${esc(c)}</span></label>`).join("");
  placeCityWrap.hidden=placeTypeEdit.value!=="국내";
 }
-function populatePlaceNames(type,current="",currentCity=""){
+function populatePlaceNames(type,current="",currentCities=[]){
  const names=Object.keys(PLACE_PRESETS[type]||{});
  placeNameEdit.innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(type==="국내"?regionLabel(n):n)}</option>`).join("");
  if(current&&names.includes(current)) placeNameEdit.value=current;
- if(type==="국내") populatePlaceCities(placeNameEdit.value,currentCity);
+ if(type==="국내") populatePlaceCities(placeNameEdit.value,currentCities);
  else { placeCityEdit.innerHTML=""; placeCityWrap.hidden=true; }
 }
 function renderPlaces(){
- const dv=places.filter(x=>x.place_type==="국내"&&x.status==="방문").length;
- const db=places.filter(x=>x.place_type==="국내"&&x.status==="버킷리스트").length;
+ const domesticCount=status=>new Set(places.filter(x=>x.place_type==="국내"&&x.status===status).flatMap(x=>{const region=normalizeRegionKey(x.region_name||"");const cities=placeCities(x);return cities.length?cities.map(c=>`${region}::${c}`):[x.place_name||region].filter(Boolean)})).size;
+ const dv=domesticCount("방문");
+ const db=domesticCount("버킷리스트");
  const ov=places.filter(x=>x.place_type==="해외"&&x.status==="방문").length;
  const ob=places.filter(x=>x.place_type==="해외"&&x.status==="버킷리스트").length;
  domesticVisitedCount.textContent=dv;domesticBucketCount.textContent=db;overseasVisitedCount.textContent=ov;overseasBucketCount.textContent=ob;
 
  const q=placeSearch.value.trim().toLowerCase(),type=placeTypeFilter.value,status=placeStatusFilter.value;
- const rows=places.filter(x=>(!type||x.place_type===type)&&(!status||x.status===status)&&(`${x.place_name} ${x.region_name||""} ${x.city_name||""} ${x.memo||""} ${x.author_name||""}`.toLowerCase().includes(q)));
+ const rows=places.filter(x=>(!type||x.place_type===type)&&(!status||x.status===status)&&(`${x.place_name} ${x.region_name||""} ${placeCities(x).join(" ")} ${x.memo||""} ${x.author_name||""}`.toLowerCase().includes(q)));
  placeList.innerHTML=rows.length?rows.map(x=>`<div class="place-row" data-place="${x.id}">
    <span>${esc(x.place_type)}</span>
    <span class="place-status ${x.status==="방문"?"visited":"bucket"}">${esc(x.status)}</span>
@@ -834,26 +854,31 @@ function editPlace(id){
  const x=places.find(v=>v.id===id);if(!x)return;
  placeEditId.value=x.id;placeTypeEdit.value=x.place_type;placeStatusEdit.value=x.status;
  const legacyRegion=x.region_name||((x.place_type==="국내"&&PLACE_PRESETS["국내"][x.place_name])?x.place_name:"");
- const legacyCity=x.city_name||((x.place_type==="국내"&&!legacyRegion)?x.place_name:"");
- populatePlaceNames(x.place_type,x.place_type==="국내"?legacyRegion:x.place_name,legacyCity);
+ const legacyCities=placeCities(x);
+ if(!legacyCities.length&&x.place_type==="국내"&&!legacyRegion&&x.place_name)legacyCities.push(x.place_name);
+ populatePlaceNames(x.place_type,x.place_type==="국내"?legacyRegion:x.place_name,legacyCities);
  placeStartEdit.value=x.start_date||"";placeEndEdit.value=x.end_date||"";placeAuthorEdit.value=x.author_name||"";placeMemoEdit.value=x.memo||"";
  placeModalTitle.textContent="방문지 수정";deletePlaceBtn.hidden=false;openModal("placeModal");
 }
 placeTypeEdit.onchange=()=>populatePlaceNames(placeTypeEdit.value);
 placeNameEdit.onchange=()=>{if(placeTypeEdit.value==="국내")populatePlaceCities(placeNameEdit.value)};
+placeCitySelectAll.onclick=()=>placeCityEdit.querySelectorAll('input[type="checkbox"]').forEach(el=>el.checked=true);
+placeCityClear.onclick=()=>placeCityEdit.querySelectorAll('input[type="checkbox"]').forEach(el=>el.checked=false);
 placeFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("placeFormPublic");
  const existing=placeEditId.value;const id=existing?Number(existing):null;
  const type=placeTypeEdit.value;
  const region=type==="국내"?placeNameEdit.value:"";
- const city=type==="국내"?placeCityEdit.value:"";
+ const cities=type==="국내"?selectedPlaceCities():[];
+ if(type==="국내"&&!cities.length){showFormError("placeFormPublic",new Error("방문한 도시·군·구를 하나 이상 선택해 주세요."));return}
+ const city=cities[0]||"";
  const name=type==="국내"?(city||region):placeNameEdit.value;
  const coord=type==="국내"?(KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]):(PLACE_PRESETS["해외"]||{})[name];
  if(!coord)return;
  const now=new Date().toISOString();
  const startDate=placeStartEdit.value||null,endDate=placeEndEdit.value||startDate;
  if(startDate&&endDate&&endDate<startDate){showFormError("placeFormPublic",new Error("종료일은 방문/계획일보다 빠를 수 없습니다."));return}
- const p={place_type:type,status:placeStatusEdit.value,place_name:name,region_name:region,city_name:city,latitude:coord[0],longitude:coord[1],start_date:startDate,end_date:endDate,author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:now};
+ const p={place_type:type,status:placeStatusEdit.value,place_name:name,region_name:region,city_name:city,city_names:cities,latitude:coord[0],longitude:coord[1],start_date:startDate,end_date:endDate,author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:now};
  try{
   let saved;
   if(id&&id>0) saved=await apiData("travel_places","PUT",p,id);

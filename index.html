@@ -305,9 +305,17 @@
     <label id="placeRegionWrap">시·도 / 국가
       <select id="placeNameEdit"></select>
     </label>
-    <label id="placeCityWrap">도시·군·구
-      <select id="placeCityEdit"></select>
-    </label>
+    <div id="placeCityWrap" class="multi-city-field">
+      <div class="multi-city-label-row">
+        <span>도시·군·구</span>
+        <div class="multi-city-actions">
+          <button type="button" id="placeCitySelectAll" class="mini-text-btn">전체 선택</button>
+          <button type="button" id="placeCityClear" class="mini-text-btn">전체 해제</button>
+        </div>
+      </div>
+      <div id="placeCityEdit" class="multi-city-grid" role="group" aria-label="방문 도시·군·구 복수 선택"></div>
+      <small class="multi-city-help">여러 지역을 방문했다면 복수 선택할 수 있습니다.</small>
+    </div>
     <div class="two-col">
       <label>방문/계획일<input id="placeStartEdit" type="date" required/></label>
       <label>종료일<input id="placeEndEdit" type="date"/></label>
