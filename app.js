@@ -462,12 +462,15 @@ function updateActiveNav(){
  const doc=document.documentElement;
  const atBottom=(window.scrollY+window.innerHeight)>=doc.scrollHeight-24;
  if(atBottom){setActiveNav("budget");return;}
- const focus=Math.max(120,window.innerHeight*0.30);
+ // 화면 상단의 고정 헤더 바로 아래 기준선을 사용합니다.
+ // 다음 섹션이 화면 중앙에 들어오기 전부터 활성화되는 기존 방식 때문에
+ // 짧은 '지역별 일정' 구간이 건너뛰어 보이던 문제를 방지합니다.
+ const anchor=window.innerWidth<=820?88:110;
  let cur="home";
  for(const id of NAV_IDS){
   const el=document.getElementById(id);if(!el)continue;
-  const r=el.getBoundingClientRect();
-  if(r.top<=focus && r.bottom>90) cur=id;
+  if(el.getBoundingClientRect().top<=anchor) cur=id;
+  else break;
  }
  setActiveNav(cur);
 }

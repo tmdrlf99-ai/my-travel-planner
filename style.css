@@ -1436,3 +1436,39 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
 }
 #board{scroll-margin-top:76px}
 #places{scroll-margin-top:76px}
+
+
+/* ===== v5.9.2 UI polish: hero alignment / mobile search / scroll nav ===== */
+/* PC: 왼쪽 검색 영역과 오른쪽 여행 기록 카드의 하단선을 자연스럽게 맞춤 */
+@media(min-width:1001px){
+  .hero{align-items:end!important}
+  .hero-copy{align-self:end!important}
+  .hero-summary{align-self:end!important}
+}
+
+/* 모바일: 검색 아이콘 + 입력창 + 검색버튼을 반드시 한 줄 유지 */
+@media(max-width:820px){
+  .hero-search{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    gap:8px!important;
+    width:100%!important;
+  }
+  .hero-search>span{
+    flex:0 0 auto!important;
+    padding-left:6px!important;
+  }
+  .hero-search input{
+    flex:1 1 auto!important;
+    min-width:0!important;
+    width:auto!important;
+  }
+  .hero-search button{
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:68px!important;
+    white-space:nowrap!important;
+    margin:0!important;
+  }
+}
