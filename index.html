@@ -36,8 +36,8 @@
     <header class="topbar">
       <div class="topbar-copy"><i></i><span>여행의 시작부터 기록까지, 한 곳에서.</span></div>
       <div class="top-actions">
-        <a href="admin.html" class="ghost-btn">관리자</a>
-        <a href="#board" class="primary-btn">+ 새 여행</a>
+        
+        <button id="openTripCreate" class="primary-btn">+ 새 여행</button>
       </div>
     </header>
 
@@ -91,7 +91,7 @@
       </section>
 
       <section id="calendar" class="panel section">
-        <div class="section-head"><span>TRAVEL CALENDAR</span><h2>여행 달력</h2><p>여행·예약·숙박·이동 일정을 월별로 확인합니다.</p></div>
+        <div class="section-head section-head-actions"><div><span>TRAVEL CALENDAR</span><h2>여행 달력</h2><p>여행·예약·숙박·이동 일정을 월별로 확인합니다.</p></div><button id="openEventCreate" class="soft-action">+ 일정 추가</button></div>
         <div class="calendar-toolbar">
           <button id="prevMonth">‹</button><strong id="monthTitle"></strong><button id="nextMonth">›</button><button id="todayMonth" class="subtle-btn">현재 월</button>
         </div>
@@ -143,7 +143,7 @@
       </section>
 
       <section id="board" class="panel section">
-        <div class="section-head"><span>TRIP BOARD</span><h2>지역별 일정 게시판</h2><p>여행지별 상세 일정과 메모를 관리합니다.</p></div>
+        <div class="section-head section-head-actions"><div><span>TRIP BOARD</span><h2>지역별 일정 게시판</h2><p>여행지별 상세 일정과 메모를 관리합니다.</p></div><button id="openTripCreate2" class="soft-action">+ 여행 추가</button></div>
         <div class="board-tools">
           <input id="boardSearch" placeholder="도시·국가·여행명 검색"/>
           <select id="boardType"><option value="">전체</option><option>국내</option><option>해외</option></select>
@@ -153,7 +153,7 @@
       </section>
 
       <section id="budget" class="panel section">
-        <div class="section-head"><span>TRAVEL BUDGET</span><h2>여행 예산</h2><p>여행별 예산과 실제 지출을 항목별로 비교합니다.</p></div>
+        <div class="section-head section-head-actions"><div><span>TRAVEL BUDGET</span><h2>여행 예산</h2><p>여행별 예산과 실제 지출을 항목별로 비교합니다.</p></div><button id="openBudgetCreate" class="soft-action">+ 예산 추가</button></div>
 
         <div class="budget-filter">
           <label>여행 선택</label>
@@ -174,6 +174,81 @@
     <footer><strong>MY TRAVEL PLANNER</strong><span>Plan · Explore · Remember</span></footer>
   </div>
 </div>
+
+
+<div id="editorBackdrop" class="editor-backdrop" hidden></div>
+
+<section id="tripModal" class="editor-modal" hidden>
+  <div class="modal-head"><div><span>TRIP EDITOR</span><h3 id="tripModalTitle">여행 추가</h3></div><button class="modal-close" data-close="tripModal">×</button></div>
+  <form id="tripFormPublic">
+    <input id="tripEditId" type="hidden"/>
+    <div class="two-col">
+      <label>구분<select id="tripTypeEdit"><option>국내</option><option>해외</option></select></label>
+      <label>상태<select id="tripStatusEdit"><option>예정</option><option>완료</option><option>버킷리스트</option></select></label>
+    </div>
+    <label>여행명<input id="tripTitleEdit" required placeholder="예: 제주도 가족여행"/></label>
+    <div class="two-col">
+      <label>시작일<input id="tripStartEdit" type="date"/></label>
+      <label>종료일<input id="tripEndEdit" type="date"/></label>
+    </div>
+    <div class="two-col">
+      <label>국내 지역<input id="tripRegionEdit" placeholder="예: 제주"/></label>
+      <label>도시<input id="tripCityEdit" placeholder="예: 서귀포"/></label>
+    </div>
+    <label>국가<input id="tripCountryEdit" placeholder="예: 일본"/></label>
+    <label>작성자명<input id="tripAuthorEdit" required placeholder="예: 문경섭"/></label>
+    <label>메모<textarea id="tripMemoEdit" placeholder="숙소, 맛집, 준비물 등"></textarea></label>
+    <div class="modal-actions">
+      <button type="button" id="deleteTripBtn" class="danger-btn" hidden>삭제</button>
+      <div></div>
+      <button type="button" class="ghost-action" data-close="tripModal">취소</button>
+      <button class="save-action">저장</button>
+    </div>
+  </form>
+</section>
+
+<section id="eventModal" class="editor-modal" hidden>
+  <div class="modal-head"><div><span>DAY PLAN</span><h3 id="eventModalTitle">일정 추가</h3></div><button class="modal-close" data-close="eventModal">×</button></div>
+  <form id="eventFormPublic">
+    <input id="eventEditId" type="hidden"/>
+    <label>연결 여행<select id="eventTripEdit"></select></label>
+    <div class="two-col">
+      <label>일자<input id="eventDateEdit" type="date" required/></label>
+      <label>구분<input id="eventCategoryEdit" value="일정" placeholder="예: 관광, 이동, 식사"/></label>
+    </div>
+    <label>일정 제목<input id="eventTitleEdit" required/></label>
+    <label>작성자명<input id="eventAuthorEdit" required/></label>
+    <label>설명<textarea id="eventDescEdit"></textarea></label>
+    <div class="modal-actions">
+      <button type="button" id="deleteEventBtn" class="danger-btn" hidden>삭제</button>
+      <div></div>
+      <button type="button" class="ghost-action" data-close="eventModal">취소</button>
+      <button class="save-action">저장</button>
+    </div>
+  </form>
+</section>
+
+<section id="budgetModal" class="editor-modal" hidden>
+  <div class="modal-head"><div><span>BUDGET EDITOR</span><h3 id="budgetModalTitle">예산 추가</h3></div><button class="modal-close" data-close="budgetModal">×</button></div>
+  <form id="budgetFormPublic">
+    <input id="budgetEditId" type="hidden"/>
+    <label>여행<select id="budgetTripEdit"></select></label>
+    <label>항목<select id="budgetCategoryEdit"><option>교통</option><option>숙박</option><option>식비</option><option>관광·쇼핑</option><option>기타</option></select></label>
+    <div class="two-col">
+      <label>예산<input id="budgetAmountEdit" type="number" min="0"/></label>
+      <label>실제 지출<input id="budgetSpentEdit" type="number" min="0"/></label>
+    </div>
+    <label>작성자명<input id="budgetAuthorEdit" required/></label>
+    <div class="modal-actions">
+      <button type="button" id="deleteBudgetBtn" class="danger-btn" hidden>삭제</button>
+      <div></div>
+      <button type="button" class="ghost-action" data-close="budgetModal">취소</button>
+      <button class="save-action">저장</button>
+    </div>
+  </form>
+</section>
+
+<div id="toast" class="toast" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
