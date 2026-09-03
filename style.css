@@ -1892,3 +1892,31 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
   overflow-wrap: normal !important;
   line-break: strict !important;
 }
+
+
+/* ===== v6.0.18 WORLD CITY MARKER VISIBILITY FIX ===== */
+/* 도시 방문 마커가 국가 레이어 위에서도 확실하게 보이도록 가시성 강화 */
+.place-marker{
+  width:18px !important;
+  height:18px !important;
+  min-width:18px !important;
+  min-height:18px !important;
+  max-width:18px !important;
+  max-height:18px !important;
+  flex:0 0 18px !important;
+  border:3px solid #fff !important;
+  box-shadow:0 0 0 2px rgba(46,111,107,.28),0 2px 8px rgba(31,72,79,.40) !important;
+  z-index:4 !important;
+}
+.place-marker.visited{background:#4eb89a !important;}
+.place-marker.bucket{background:#efa46e !important;}
+@media(max-width:820px){
+  button.place-marker{
+    width:16px !important;
+    height:16px !important;
+    min-width:16px !important;
+    min-height:16px !important;
+    max-width:16px !important;
+    max-height:16px !important;
+  }
+}

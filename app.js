@@ -648,7 +648,7 @@ async function setupWorldCountryLayer(){
    const beforeLabel=firstSymbolLayerId(worldMap);
    worldMap.addLayer({id:'travel-world-fill',type:'fill',source:'travel-world-countries',paint:mapFillPaint()},beforeLabel);
    worldMap.addLayer({id:'travel-world-line',type:'line',source:'travel-world-countries',paint:mapLinePaint()},beforeLabel);
-   worldCountryLayerReady=true;clearMapMarkers(worldMapMarkers);updateWorldCountrySource();
+   worldCountryLayerReady=true;updateWorldCountrySource();renderWorldFallbackMarkers();
    worldMap.on('mouseenter','travel-world-fill',()=>{worldMap.getCanvas().style.cursor='pointer'});
    worldMap.on('mouseleave','travel-world-fill',()=>{worldMap.getCanvas().style.cursor=''});
    worldMap.on('click','travel-world-fill',e=>{const f=e.features?.[0];const n=f?.properties?.geo_name||f?.properties?.name;if(n)showWorldCountry(n)});
