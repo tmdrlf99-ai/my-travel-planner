@@ -36,6 +36,65 @@ async function tryServer(fn){
  try{return await fn()}catch(err){console.warn("Background server sync skipped:",err);return {error:err}}
 }
 
+/* v5.8 방문지 Supabase 엄격 동기화
+   - 방문지는 Supabase를 원본(source of truth)으로 사용
+   - 기존 v5.6에서 PC localStorage에만 남은 음수 ID 방문지는 서버 연결 시 자동 이관
+   - 신규/수정/삭제는 Supabase 성공 후에만 저장 완료 처리
+*/
+function throwIfSbError(result){
+ if(result?.error) throw result.error;
+ return result?.data;
+}
+function serverPlacePayload(p){
+ const q={...p};
+ delete q.id;
+ return q;
+}
+async function migrateLegacyLocalPlaces(){
+ const localRows=localRead("places");
+ const pending=localRows.filter(x=>Number(x.id)<=0);
+ if(!pending.length){
+   // 과거에 캐시로 남은 양수 ID 방문지는 서버 원본과 혼동되지 않도록 제거
+   if(localRows.length) localWrite("places",[]);
+   return {migrated:0,failed:0};
+ }
+ let migrated=0;
+ const failed=[];
+ for(const row of pending){
+   try{
+     const q=serverPlacePayload({...row,created_at:row.created_at||new Date().toISOString(),updated_at:new Date().toISOString()});
+     const r=await sb.from("travel_places").insert(q).select().single();
+     throwIfSbError(r);
+     migrated++;
+   }catch(err){
+     console.warn("Legacy local place migration failed:",row,err);
+     failed.push(row);
+   }
+ }
+ // 실패한 음수 ID 건만 남겨 둔다. 성공/과거 캐시 데이터는 모두 제거.
+ localWrite("places",failed);
+ return {migrated,failed:failed.length};
+}
+async function loadPlacesStrict(){
+ const first=await sb.from("travel_places").select("*").order("created_at",{ascending:false});
+ throwIfSbError(first);
+
+ const legacy=localRead("places").filter(x=>Number(x.id)<=0);
+ if(legacy.length){
+   const result=await migrateLegacyLocalPlaces();
+   const second=await sb.from("travel_places").select("*").order("created_at",{ascending:false});
+   const serverRows=throwIfSbError(second)||[];
+   const stillLocal=localRead("places").filter(x=>Number(x.id)<=0);
+   if(result.migrated>0) toast(`PC에만 있던 방문지 ${result.migrated}건을 Supabase에 동기화했습니다.`);
+   if(result.failed>0) console.warn(`방문지 ${result.failed}건은 아직 기기에만 남아 있습니다.`);
+   return mergeRows(serverRows,stillLocal);
+ }
+
+ // 서버 조회가 성공하면 방문지 localStorage 캐시는 비운다.
+ if(localRead("places").length) localWrite("places",[]);
+ return first.data||[];
+}
+
 let trips=[],events=[],budgets=[],regions=[],worldPlaces=[],places=[];
 let cal=new Date(),selectedDate="",selectedBudgetTrip="";
 
@@ -104,19 +163,27 @@ $("#editorBackdrop").addEventListener("click",()=>{$$(".editor-modal").forEach(m
 async function loadAll(){
  const localTrips=localRead("trips"),localEvents=localRead("events"),localBudgets=localRead("budgets"),localPlaces=localRead("places");
  try{
-  const [t,e,b,p]=await Promise.all([
+  const [t,e,b]=await Promise.all([
    sb.from("travel_trips").select("*").eq("is_visible",true).order("start_date"),
    sb.from("travel_events").select("*").eq("is_visible",true).order("event_date"),
-   sb.from("travel_budgets").select("*").order("sort_order"),
-   sb.from("travel_places").select("*").order("created_at",{ascending:false})
+   sb.from("travel_budgets").select("*").order("sort_order")
   ]);
   trips=mergeRows(t.data||[],localTrips);
   events=mergeRows(e.data||[],localEvents);
   budgets=mergeRows(b.data||[],localBudgets);
-  places=mergeRows(p.data||[],localPlaces);
  }catch(err){
-  console.warn("Supabase unavailable; using local data.",err);
-  trips=localTrips;events=localEvents;budgets=localBudgets;places=localPlaces;
+  console.warn("Supabase unavailable; using local trip/event/budget data.",err);
+  trips=localTrips;events=localEvents;budgets=localBudgets;
+ }
+
+ // 방문지는 v5.8부터 Supabase 우선. 서버 오류를 빈 배열로 오인하지 않는다.
+ try{
+  places=await loadPlacesStrict();
+ }catch(err){
+  console.error("Supabase travel_places load failed:",err);
+  // 기존 v5.6의 미동기화 자료를 잃지 않기 위한 표시용 fallback만 유지.
+  // 신규 저장은 아래 CRUD에서 서버 성공을 요구하므로 더 이상 로컬 단독 저장되지 않는다.
+  places=localPlaces;
  }
  renderAll();
 }
@@ -292,18 +359,49 @@ placeTypeEdit.onchange=()=>populatePlaceNames(placeTypeEdit.value);
 placeFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("placeFormPublic");
  const existing=placeEditId.value;
- const id=existing?Number(existing):localNextId("places");
+ const id=existing?Number(existing):null;
  const type=placeTypeEdit.value,name=placeNameEdit.value,coord=(PLACE_PRESETS[type]||{})[name];
  if(!coord)return;
- const p={id,place_type:type,status:placeStatusEdit.value,place_name:name,latitude:coord[0],longitude:coord[1],author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:new Date().toISOString(),created_at:new Date().toISOString()};
- localUpsert("places",p);closeModal("placeModal");toast(existing?"방문지가 수정되었습니다.":"방문지가 저장되었습니다.");await loadAll();
- if(id>0){const q={...p};delete q.id;delete q.created_at;await tryServer(()=>sb.from("travel_places").update(q).eq("id",id));}
- else{const q={...p};delete q.id;const r=await tryServer(()=>sb.from("travel_places").insert(q).select().single());if(r&&!r.error&&r.data){localDelete("places",id);localUpsert("places",r.data);await loadAll();}}
+ const now=new Date().toISOString();
+ const base={place_type:type,status:placeStatusEdit.value,place_name:name,latitude:coord[0],longitude:coord[1],author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:now};
+ try{
+   if(id&&id>0){
+     const r=await sb.from("travel_places").update(base).eq("id",id).select().single();
+     throwIfSbError(r);
+     // 과거 localStorage에 남은 같은 ID 캐시 제거
+     localDelete("places",id);
+   }else{
+     const payload={...base,created_at:now};
+     const r=await sb.from("travel_places").insert(payload).select().single();
+     throwIfSbError(r);
+     // 기존 v5.6 음수 ID 항목을 수정해 저장한 경우 로컬 임시본 제거
+     if(id&&id<0) localDelete("places",id);
+   }
+   closeModal("placeModal");
+   toast(existing?"방문지가 Supabase에 수정·동기화되었습니다.":"방문지가 Supabase에 저장·동기화되었습니다.");
+   await loadAll();
+ }catch(err){
+   console.error("travel_places save failed:",err);
+   showFormError("placeFormPublic",err);
+ }
 }
 deletePlaceBtn.onclick=async()=>{
  const id=Number(placeEditId.value);if(!id||!confirm("이 방문지 기록을 삭제하시겠습니까?"))return;
- localDelete("places",id);if(id>0)await tryServer(()=>sb.from("travel_places").delete().eq("id",id));
- closeModal("placeModal");toast("방문지가 삭제되었습니다.");await loadAll();
+ clearFormError("placeFormPublic");
+ try{
+   if(id>0){
+     const r=await sb.from("travel_places").delete().eq("id",id);
+     throwIfSbError(r);
+   }
+   // 음수 ID는 과거 v5.6에서 PC에만 저장된 임시 자료이므로 로컬에서 제거
+   localDelete("places",id);
+   closeModal("placeModal");
+   toast("방문지가 삭제되고 Supabase와 동기화되었습니다.");
+   await loadAll();
+ }catch(err){
+   console.error("travel_places delete failed:",err);
+   showFormError("placeFormPublic",err);
+ }
 }
 placeTypeFilter.onchange=renderPlaces;placeStatusFilter.onchange=renderPlaces;placeSearch.oninput=renderPlaces;
 openPlaceCreate.onclick=newPlace;
