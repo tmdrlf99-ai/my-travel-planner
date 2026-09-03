@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>My Travel Planner</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <a class="brand" href="#home">
+      <div class="brand-mark">✦</div>
+      <div><strong>TRAVEL NOTE</strong><span>MY JOURNEY PLANNER</span></div>
+    </a>
+
+    <span class="side-caption">여행 관리</span>
+    <nav class="nav">
+      <a href="#home" class="active" data-target="home"><b>⌂</b><span>홈</span></a>
+      <a href="#calendar" data-target="calendar"><b>▣</b><span>여행 달력</span></a>
+      <a href="#korea" data-target="korea"><b>KR</b><span>국내 지도</span></a>
+      <a href="#world" data-target="world"><b>◉</b><span>세계 지도</span></a>
+      <a href="#board" data-target="board"><b>✎</b><span>지역별 일정</span></a>
+      <a href="#budget" data-target="budget"><b>₩</b><span>예산</span></a>
+    </nav>
+
+    <div class="next-trip">
+      <span>NEXT TRIP</span>
+      <strong id="sideNextTrip">아직 예정 여행이 없습니다</strong>
+      <p id="sideNextDates">새 여행을 등록해 보세요.</p>
+      <small id="sideNextDday">READY</small>
+    </div>
+  </aside>
+
+  <div class="page">
+    <header class="topbar">
+      <div class="topbar-copy"><i></i><span>여행의 시작부터 기록까지, 한 곳에서.</span></div>
+      <div class="top-actions">
+        <a href="admin.html" class="ghost-btn">관리자</a>
+        <a href="#board" class="primary-btn">+ 새 여행</a>
+      </div>
+    </header>
+
+    <main>
+      <section id="home" class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">MY TRAVEL PLANNER</span>
+          <h1>다음 여행을<br><em>더 즐겁게 준비하세요.</em></h1>
+          <p>달력, 지도, 일정, 예산을 한 화면에서 관리하고 여행이 끝난 뒤에는 나만의 기록으로 남겨보세요.</p>
+
+          <div class="hero-search">
+            <span>⌕</span>
+            <input id="globalSearch" placeholder="도시, 국가, 여행명을 검색해 보세요"/>
+            <button id="globalSearchBtn">검색</button>
+          </div>
+          <div class="hero-tags"><span># 국내여행</span><span># 해외여행</span><span># 가족여행</span><span># 맛집</span></div>
+        </div>
+
+        <div class="hero-summary">
+          <span>TRAVEL SUMMARY</span>
+          <h3>올해의 여행 기록</h3>
+          <div class="summary-stats">
+            <div><b id="statTrips">0</b><small>등록 여행</small></div>
+            <div><b id="statCities">0</b><small>방문 지역</small></div>
+            <div><b id="statCountries">0</b><small>방문 국가</small></div>
+          </div>
+          <div class="summary-budget">
+            <div><span>전체 여행 예산</span><b id="heroBudget">₩0</b></div>
+            <div class="progress"><i id="budgetProgress"></i></div>
+            <small id="heroBudgetDetail">지출 ₩0 / 0%</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="quick-grid">
+        <a href="#calendar"><div class="quick-icon sky">▣</div><div><small>일정 한눈에</small><strong>여행 달력</strong><p>출발·귀국·예약 일정 확인</p></div></a>
+        <a href="#korea"><div class="quick-icon mint">KR</div><div><small>국내 여행기록</small><strong>국내 지도</strong><p>방문 지역과 계획을 지도에서 확인</p></div></a>
+        <a href="#world"><div class="quick-icon peach">◉</div><div><small>해외 여행기록</small><strong>세계 지도</strong><p>방문 국가와 버킷리스트 관리</p></div></a>
+        <a href="#budget"><div class="quick-icon lemon">₩</div><div><small>여행비 관리</small><strong>예산</strong><p>예산과 실제 지출을 한눈에</p></div></a>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="card">
+          <div class="card-head"><div><span>UPCOMING</span><h2>다가오는 여행</h2></div><b>TRIP</b></div>
+          <div id="upcomingTrips" class="trip-list"></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><div><span>BUDGET</span><h2>예산 요약</h2></div><b>ALL</b></div>
+          <div id="budgetMini" class="budget-mini"></div>
+        </article>
+      </section>
+
+      <section id="calendar" class="panel section">
+        <div class="section-head"><span>TRAVEL CALENDAR</span><h2>여행 달력</h2><p>여행·예약·숙박·이동 일정을 월별로 확인합니다.</p></div>
+        <div class="calendar-toolbar">
+          <button id="prevMonth">‹</button><strong id="monthTitle"></strong><button id="nextMonth">›</button><button id="todayMonth" class="subtle-btn">현재 월</button>
+        </div>
+        <div class="calendar-layout">
+          <div class="calendar-card">
+            <div class="week"><span class="sun">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="sat">토</span></div>
+            <div id="calendarGrid" class="calendar-grid"></div>
+          </div>
+          <aside class="day-panel">
+            <div class="day-head"><div><span>DAY PLAN</span><h3 id="dayTitle">선택 날짜 일정</h3></div><b id="dayCount">0건</b></div>
+            <div id="dayEvents" class="day-events"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="korea" class="panel section">
+        <div class="section-head"><span>KOREA MAP</span><h2>국내 여행 지도</h2><p>방문했거나 예정인 국내 지역을 지도에서 확인합니다.</p></div>
+        <div class="map-layout">
+          <div class="korea-visual">
+            <button data-region="서울" style="--x:48%;--y:18%">서울</button>
+            <button data-region="경기" style="--x:39%;--y:27%">경기</button>
+            <button data-region="강원" style="--x:66%;--y:22%">강원</button>
+            <button data-region="충청" style="--x:47%;--y:43%">충청</button>
+            <button data-region="전라" style="--x:35%;--y:63%">전라</button>
+            <button data-region="경상" style="--x:65%;--y:60%">경상</button>
+            <button data-region="제주" style="--x:45%;--y:88%">제주</button>
+          </div>
+          <div class="map-info">
+            <span>REGION</span><h3 id="koreaRegion">지역을 선택해 주세요</h3>
+            <p id="koreaDesc">지도에서 지역을 선택하면 등록된 여행과 방문 기록을 보여드립니다.</p>
+            <div id="koreaTripList" class="mini-trip-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="world" class="panel section">
+        <div class="section-head"><span>WORLD MAP</span><h2>세계 여행 지도</h2><p>방문 국가와 가고 싶은 곳을 기록합니다.</p></div>
+        <div class="world-layout">
+          <div class="world-visual">
+            <div class="continent c1"></div><div class="continent c2"></div><div class="continent c3"></div><div class="continent c4"></div><div class="continent c5"></div>
+            <div id="worldMarkers"></div>
+          </div>
+          <div class="map-info">
+            <span>COUNTRY</span><h3 id="worldCountry">국가를 선택해 주세요</h3>
+            <p id="worldDesc">지도에서 방문 국가나 버킷리스트 국가를 선택해보세요.</p>
+            <div id="worldTripList" class="mini-trip-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="board" class="panel section">
+        <div class="section-head"><span>TRIP BOARD</span><h2>지역별 일정 게시판</h2><p>여행지별 상세 일정과 메모를 관리합니다.</p></div>
+        <div class="board-tools">
+          <input id="boardSearch" placeholder="도시·국가·여행명 검색"/>
+          <select id="boardType"><option value="">전체</option><option>국내</option><option>해외</option></select>
+          <select id="boardStatus"><option value="">전체 상태</option><option>예정</option><option>완료</option><option>버킷리스트</option></select>
+        </div>
+        <div id="tripBoard" class="trip-board"></div>
+      </section>
+
+      <section id="budget" class="panel section">
+        <div class="section-head"><span>TRAVEL BUDGET</span><h2>여행 예산</h2><p>여행별 예산과 실제 지출을 항목별로 비교합니다.</p></div>
+
+        <div class="budget-filter">
+          <label>여행 선택</label>
+          <select id="budgetTripSelect"></select>
+        </div>
+
+        <div class="budget-summary-grid">
+          <div><span>총 예산</span><strong id="budgetTotal">₩0</strong></div>
+          <div><span>현재 지출</span><strong id="budgetSpent">₩0</strong></div>
+          <div><span>남은 예산</span><strong id="budgetRemain">₩0</strong></div>
+          <div><span>사용률</span><strong id="budgetRate">0%</strong></div>
+        </div>
+
+        <div id="budgetTable" class="budget-table"></div>
+      </section>
+    </main>
+
+    <footer><strong>MY TRAVEL PLANNER</strong><span>Plan · Explore · Remember</span></footer>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
