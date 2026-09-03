@@ -395,3 +395,141 @@ body{font-size:17px!important}
   .place-row .place-memo,.place-row .place-author{display:none}
   .korea-real-map,.world-real-map{min-height:370px}
 }
+
+
+/* ===== v5.1 한글 렌더링/팝업 가독성 수정 ===== */
+html,body,button,input,select,textarea,
+.editor-modal,.editor-modal *,
+.soft-action,.primary-btn,.ghost-btn,
+.modal-actions button,.modal-close,
+.place-tools input,.place-tools select {
+  font-family:
+    "Malgun Gothic",
+    "맑은 고딕",
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    Arial,
+    sans-serif !important;
+  font-synthesis: none !important;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* +추가 계열 버튼 전체 */
+.soft-action,
+.primary-btn,
+.ghost-btn {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  letter-spacing: -0.02em !important;
+  white-space: nowrap !important;
+}
+
+/* 팝업 제목 */
+.modal-head span{
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  letter-spacing: .08em !important;
+}
+.modal-head h3{
+  font-size: 23px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  letter-spacing: -0.03em !important;
+}
+
+/* 팝업의 구분/상태/방문지/작성자명/메모 같은 라벨 */
+.editor-modal label{
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.45 !important;
+  letter-spacing: -0.025em !important;
+  color:#456474 !important;
+}
+
+/* 입력값 및 placeholder */
+.editor-modal input,
+.editor-modal select,
+.editor-modal textarea{
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  line-height: 1.5 !important;
+  letter-spacing: -0.02em !important;
+  color:#294b5e !important;
+  min-height:46px;
+}
+.editor-modal textarea{
+  min-height:112px !important;
+}
+.editor-modal input::placeholder,
+.editor-modal textarea::placeholder{
+  font-family:
+    "Malgun Gothic",
+    "맑은 고딕",
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    Arial,
+    sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color:#899aa3 !important;
+  opacity:1 !important;
+}
+
+/* select 내부 텍스트 */
+.editor-modal select,
+.editor-modal select option{
+  font-family:
+    "Malgun Gothic",
+    "맑은 고딕",
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    Arial,
+    sans-serif !important;
+  font-size:15px !important;
+  font-weight:600 !important;
+  letter-spacing:-0.02em !important;
+}
+
+/* 취소/저장/삭제 */
+.modal-actions button{
+  font-size:14px !important;
+  font-weight:700 !important;
+  line-height:1.35 !important;
+  letter-spacing:-0.02em !important;
+  min-height:42px;
+}
+
+/* 방문지 관리 본문도 동일하게 */
+.place-summary-grid span,
+.place-tools select,
+.place-tools input,
+.place-row span,
+.place-row small,
+.place-status{
+  font-size:13px !important;
+  line-height:1.4 !important;
+  letter-spacing:-0.02em !important;
+}
+.place-row b{
+  font-size:15px !important;
+  line-height:1.4 !important;
+  letter-spacing:-0.025em !important;
+}
+
+/* 모바일에서는 iOS 자동 줌/축소 방지 */
+@media(max-width:720px){
+  .editor-modal input,
+  .editor-modal select,
+  .editor-modal textarea{
+    font-size:16px !important;
+  }
+  .soft-action,
+  .primary-btn,
+  .ghost-btn{
+    font-size:13px !important;
+  }
+}
