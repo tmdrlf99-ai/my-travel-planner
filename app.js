@@ -18,7 +18,7 @@ const KR_HOLIDAYS_2026={
  "2026-12-25":"성탄절"
 };
 
-let koreaMap=null,koreaMarkers=[];
+let koreaMap=null,koreaMarkers=[],worldMap=null,worldMapMarkers=[];
 
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.hidden=true,2200)}
 function openModal(id){$("#editorBackdrop").hidden=false;$("#"+id).hidden=false}
@@ -93,7 +93,7 @@ prevMonth.onclick=()=>{cal.setMonth(cal.getMonth()-1);renderCalendar()};nextMont
 function renderKorea(){
  if(typeof L==="undefined") return;
  if(!koreaMap){
-   koreaMap=L.map("koreaRealMap",{zoomControl:true,scrollWheelZoom:false}).setView([36.3,127.8],7);
+   koreaMap=L.map("koreaRealMap",{zoomControl:true,scrollWheelZoom:false,preferCanvas:true}).setView([36.3,127.8],7);
    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
      maxZoom:18,
      attribution:'&copy; OpenStreetMap contributors'
@@ -119,8 +119,127 @@ function renderKorea(){
    });
    koreaMarkers.push(marker);
  });
- setTimeout(()=>koreaMap.invalidateSize(),50);
+ setTimeout(()=>{koreaMap.invalidateSize(true);},180);
 }
+
+function renderWorld(){
+ if(typeof L==="undefined" || !document.getElementById("worldRealMap")) return;
+
+ if(!worldMap){
+   worldMap=L.map("worldRealMap",{
+     zoomControl:true,
+     scrollWheelZoom:false,
+     preferCanvas:true,
+     minZoom:2,
+     worldCopyJump:true
+   }).setView([20,12],2);
+
+   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+     maxZoom:18,
+     tileSize:256,
+     zoomOffset:0,
+     attribution:'&copy; OpenStreetMap contributors'
+   }).addTo(worldMap);
+ }
+
+ worldMapMarkers.forEach(m=>m.remove());
+ worldMapMarkers=[];
+
+ const coords={
+   "대한민국":[36.3,127.8],
+   "한국":[36.3,127.8],
+   "일본":[36.2,138.3],
+   "베트남":[16.0,108.0],
+   "프랑스":[46.2,2.2],
+   "미국":[39.5,-98.35],
+   "미합중국":[39.5,-98.35],
+   "호주":[-25.3,133.8],
+   "태국":[15.87,100.99],
+   "중국":[35.86,104.2],
+   "대만":[23.7,121.0],
+   "싱가포르":[1.35,103.82],
+   "인도네시아":[-2.55,118.0],
+   "필리핀":[12.88,121.77],
+   "말레이시아":[4.21,101.98],
+   "영국":[55.38,-3.44],
+   "이탈리아":[41.87,12.57],
+   "스페인":[40.46,-3.75],
+   "독일":[51.17,10.45],
+   "스위스":[46.82,8.23],
+   "캐나다":[56.13,-106.35],
+   "뉴질랜드":[-40.9,174.89],
+   "괌":[13.44,144.79]
+ };
+
+ const fallback=[
+   {country:"대한민국",status:"방문"},
+   {country:"일본",status:"방문"},
+   {country:"베트남",status:"방문"},
+   {country:"프랑스",status:"버킷리스트"},
+   {country:"미국",status:"버킷리스트"},
+   {country:"호주",status:"버킷리스트"}
+ ];
+
+ let rows=(worldPlaces&&worldPlaces.length?worldPlaces:fallback)
+   .map(x=>{
+     const c=coords[x.country];
+     return c?{...x,lat:c[0],lng:c[1]}:null;
+   })
+   .filter(Boolean);
+
+ // 실제 등록된 해외여행 국가 자동 반영
+ trips.filter(t=>t.trip_type==="해외"&&t.country).forEach(t=>{
+   if(rows.some(x=>x.country===t.country)) return;
+   const c=coords[t.country];
+   if(c){
+     rows.push({
+       country:t.country,
+       status:t.status==="버킷리스트"?"버킷리스트":"방문",
+       lat:c[0],
+       lng:c[1]
+     });
+   }
+ });
+
+ rows.forEach(x=>{
+   const icon=L.divIcon({
+     className:"",
+     html:`<div class="world-marker-dot ${x.status==="방문"?"visited":"wishlist"}"></div>`,
+     iconSize:[16,16],
+     iconAnchor:[8,8]
+   });
+
+   const marker=L.marker([x.lat,x.lng],{icon}).addTo(worldMap);
+   marker.bindTooltip(`${x.country} · ${x.status||"방문"}`,{
+     direction:"top",
+     offset:[0,-8]
+   });
+
+   marker.on("click",()=>{
+     const related=trips.filter(t=>t.country===x.country);
+     worldCountry.textContent=x.country;
+     worldDesc.textContent=x.status==="방문"
+       ?"방문 기록이 있는 국가입니다."
+       :"가고 싶은 곳으로 등록된 국가입니다.";
+
+     worldTripList.innerHTML=related.length
+       ? related.map(t=>`<div class="mini-trip" data-trip="${t.id}">
+           <b>${esc(t.title)}</b>
+           <small>${t.start_date||""} · ${esc(t.city||"")}${t.author_name?` · ${esc(t.author_name)}`:""}</small>
+         </div>`).join("")
+       : '<div class="mini-trip"><small>등록된 여행이 없습니다.</small></div>';
+
+     $$("#worldTripList [data-trip]").forEach(el=>{
+       el.onclick=()=>editTrip(Number(el.dataset.trip));
+     });
+   });
+
+   worldMapMarkers.push(marker);
+ });
+
+ setTimeout(()=>{worldMap.invalidateSize(true);},180);
+}
+
 function renderBoard(){
  const q=boardSearch.value.toLowerCase(),type=boardType.value,status=boardStatus.value;
  const list=trips.filter(x=>(!type||x.trip_type===type)&&(!status||x.status===status)&&(`${x.title} ${x.city||""} ${x.country||""} ${x.region||""}`.toLowerCase().includes(q)));

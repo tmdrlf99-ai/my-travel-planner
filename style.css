@@ -192,3 +192,90 @@ body{font-size:17px!important}
   .korea-real-map{min-height:360px}
   .next-trip strong,.next-trip p{white-space:normal}
 }
+
+
+/* ===== v4.2 지도 렌더링 완전 수정 ===== */
+
+/* 전역 img 규칙과 Leaflet 지도 타일 충돌 차단 */
+.leaflet-container {
+  font-family: inherit !important;
+}
+.leaflet-container .leaflet-pane img,
+.leaflet-container img.leaflet-tile,
+.leaflet-container .leaflet-marker-icon,
+.leaflet-container .leaflet-marker-shadow {
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  object-fit: initial !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.leaflet-container img.leaflet-tile {
+  width: 256px !important;
+  height: 256px !important;
+}
+.leaflet-tile-container {
+  width: auto !important;
+  height: auto !important;
+}
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-tile-pane,
+.leaflet-overlay-pane,
+.leaflet-marker-pane {
+  transform-origin: 0 0 !important;
+}
+
+/* 실제 세계지도 */
+.world-real-map{
+  min-height:430px;
+  width:100%;
+  border-radius:18px;
+  overflow:hidden;
+  background:#eef5f2;
+  border:1px solid #dbe6e4;
+  position:relative;
+  z-index:1;
+}
+.world-real-map .leaflet-control-attribution,
+.korea-real-map .leaflet-control-attribution{
+  font-size:9px!important;
+}
+.world-marker-dot,
+.korea-marker{
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(55,91,80,.24);
+}
+.world-marker-dot.visited{background:#63c4a5}
+.world-marker-dot.wishlist{background:#f0ad7d}
+.korea-marker{background:#63c4a5}
+.korea-marker.empty{background:#9bb6be}
+
+/* 토요일이더라도 공휴일이면 빨강이 최우선 */
+.day.saturday.holiday,
+.day.saturday.holiday > span,
+.day.holiday,
+.day.holiday > span,
+.day.holiday .holiday-name {
+  color:#d94b4b !important;
+}
+.day.saturday.holiday,
+.day.holiday {
+  background:#fff7f7 !important;
+}
+.day.saturday:not(.holiday){
+  color:#3578d4 !important;
+  background:#f7faff;
+}
+.day.sunday:not(.holiday){
+  color:#d94b4b !important;
+}
+@media(max-width:720px){
+  .world-real-map{min-height:360px}
+}
