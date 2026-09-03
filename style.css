@@ -1585,3 +1585,25 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
     padding:0 5px !important;
   }
 }
+
+
+/* ===== v5.9.8 지역별 일정 시·도/도시 선택 UI ===== */
+#tripRegionEdit,
+#tripCityEdit{
+  width:100%;
+}
+#tripRegionWrap[hidden],
+#tripCityWrap[hidden]{
+  display:none !important;
+}
+@media(max-width:820px){
+  #tripModal .two-col{
+    grid-template-columns:1fr 1fr !important;
+    gap:10px !important;
+  }
+}
+@media(max-width:520px){
+  #tripModal .two-col{
+    grid-template-columns:1fr !important;
+  }
+}

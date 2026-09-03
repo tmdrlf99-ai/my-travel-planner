@@ -82,10 +82,18 @@ function snapshotFingerprint(data){
 async function quietSync(){
  if(document.hidden||$$(`.editor-modal:not([hidden])`).length) return;
  try{
-  const data=await apiData("all");
-  const fp=snapshotFingerprint(data);
+  let data=await apiData("all");
+  let fp=snapshotFingerprint(data);
   if(fp===__serverFingerprint) return;
-  __serverFingerprint=fp;applyServerSnapshot(data);renderAll();
+  __serverFingerprint=fp;
+  applyServerSnapshot(data);
+  const migrated=await autoArchiveCompletedTrips();
+  if(migrated){
+    data=await apiData("all");
+    __serverFingerprint=snapshotFingerprint(data);
+    applyServerSnapshot(data);
+  }
+  renderAll();
  }catch(err){console.warn("Quiet sync skipped:",err)}
 }
 function startAutoSync(){
@@ -156,6 +164,45 @@ const KR_CITY_COORDS={
 };
 const KR_REGION_LABELS={"경기":"경기도","강원":"강원특별자치도","충북":"충청북도","충남":"충청남도","전북":"전북특별자치도","전남":"전라남도","경북":"경상북도","경남":"경상남도","제주":"제주특별자치도"};
 const regionLabel=r=>KR_REGION_LABELS[r]||r;
+const METRO_REGIONS=new Set(["서울","부산","대구","인천","광주","대전","울산","세종"]);
+const normalizeRegionKey=value=>{
+ const v=String(value||"").trim();
+ if(KR_REGION_CITIES[v]) return v;
+ return Object.keys(KR_REGION_CITIES).find(k=>regionLabel(k)===v)||v;
+};
+function populateTripRegions(current=""){
+ const key=normalizeRegionKey(current);
+ tripRegionEdit.innerHTML='<option value="">시·도 선택</option>'+Object.keys(KR_REGION_CITIES)
+   .map(r=>`<option value="${esc(r)}">${esc(regionLabel(r))}</option>`).join("");
+ if(key&&KR_REGION_CITIES[key]) tripRegionEdit.value=key;
+}
+function populateTripCities(region,current=""){
+ const key=normalizeRegionKey(region);
+ const cities=KR_REGION_CITIES[key]||[];
+ const optional=METRO_REGIONS.has(key);
+ tripCityEdit.innerHTML=`<option value="">${optional?"선택 안 함":"도시 선택"}</option>`+
+   cities.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+ if(current&&cities.includes(current)) tripCityEdit.value=current;
+ tripCityEdit.required=tripTypeEdit.value==="국내"&&!optional;
+}
+function syncTripLocationFields(region="",city="",country=""){
+ const domestic=tripTypeEdit.value==="국내";
+ tripRegionWrap.hidden=!domestic;
+ tripCityWrap.hidden=!domestic;
+ tripRegionEdit.required=domestic;
+ if(domestic){
+   populateTripRegions(region);
+   populateTripCities(tripRegionEdit.value,city);
+   if(!tripCountryEdit.value||country) tripCountryEdit.value=country||"대한민국";
+ }else{
+   tripRegionEdit.required=false;
+   tripCityEdit.required=false;
+   tripRegionEdit.innerHTML="";
+   tripCityEdit.innerHTML="";
+   if(country!==undefined) tripCountryEdit.value=country||"";
+ }
+ tripCountryEdit.required=true;
+}
 const domesticPlaceText=x=>{
  const r=x.region_name||"", c=x.city_name||"";
  if(r&&c) return `${regionLabel(r)} · ${c}`;
@@ -308,14 +355,70 @@ $("#editorBackdrop").addEventListener("click",()=>{$$(".editor-modal").forEach(m
 async function loadAll(){
  const localTrips=localRead("trips"),localEvents=localRead("events"),localBudgets=localRead("budgets"),localPlaces=localRead("places");
  try{
-  const data=await apiData("all");
+  let data=await apiData("all");
   __serverFingerprint=snapshotFingerprint(data);
   applyServerSnapshot(data);
+  const migrated=await autoArchiveCompletedTrips();
+  if(migrated){
+    data=await apiData("all");
+    __serverFingerprint=snapshotFingerprint(data);
+    applyServerSnapshot(data);
+  }
  }catch(err){
   console.warn("Server sync unavailable; using local cache.",err);
   trips=localTrips;events=localEvents;budgets=localBudgets;places=localPlaces;
  }
  renderAll();
+}
+function completedTripPlacePayload(x){
+ const type=x.trip_type==="해외"?"해외":"국내";
+ const region=type==="국내"?normalizeRegionKey(x.region):"";
+ const city=type==="국내"?(x.city||""):"";
+ const country=(x.country|| (type==="국내"?"대한민국":"")).trim();
+ const coord=type==="국내"
+   ? (KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]||[36.5,127.8])
+   : ((PLACE_PRESETS["해외"]||{})[country]||[0,0]);
+ const placeName=type==="국내"?(city||regionLabel(region)||x.title):(country||x.title);
+ const sourceMemo=[`지역별 일정 자동등록 · ${x.title}`,x.memo||""].filter(Boolean).join("\n");
+ return {
+   place_type:type,
+   status:"방문",
+   place_name:placeName,
+   region_name:region,
+   city_name:city,
+   latitude:coord[0],
+   longitude:coord[1],
+   start_date:x.start_date||x.end_date||null,
+   end_date:x.end_date||x.start_date||null,
+   author_name:x.author_name||"",
+   memo:sourceMemo,
+   source_trip_id:Number(x.id),
+   updated_at:new Date().toISOString()
+ };
+}
+async function autoArchiveCompletedTrips(){
+ const today=fmt(new Date());
+ const targets=trips.filter(x=>Number(x.id)>0&&x.end_date&&x.end_date<today&&x.status!=="버킷리스트");
+ if(!targets.length)return false;
+ let changed=false;
+ for(const trip of targets){
+   try{
+     if(trip.status!=="완료"){
+       await apiData("travel_trips","PUT",{...trip,status:"완료",updated_at:new Date().toISOString()},trip.id);
+       trip.status="완료";
+       changed=true;
+     }
+     const already=places.some(p=>Number(p.source_trip_id)===Number(trip.id));
+     if(!already){
+       const saved=await apiData("travel_places","POST",completedTripPlacePayload(trip));
+       if(saved) places.unshift(saved);
+       changed=true;
+     }
+   }catch(err){
+     console.warn(`완료 여행 자동 방문지 등록 실패: ${trip.title}`,err);
+   }
+ }
+ return changed;
 }
 function renderAll(){renderHero();renderUpcoming();renderCalendar();renderKorea();renderWorld();renderPlaces();renderBoard();renderBudgetOptions();renderBudget();fillEditTripSelects()}
 function renderHero(){
@@ -559,7 +662,7 @@ openPlaceCreate.onclick=newPlace;
 function renderBoard(){
  const q=boardSearch.value.toLowerCase(),type=boardType.value,status=boardStatus.value;
  const list=trips.filter(x=>(!type||x.trip_type===type)&&(!status||x.status===status)&&(`${x.title} ${x.city||""} ${x.country||""} ${x.region||""}`.toLowerCase().includes(q)));
- tripBoard.innerHTML=list.length?list.map(x=>`<div class="board-row" data-trip="${x.id}"><span>${esc(x.trip_type)}</span><span>${esc(x.region||x.country||"-")}</span><b>${esc(x.title)}${x.author_name?` <small class="author-note">by ${esc(x.author_name)}</small>`:""}</b><time>${x.start_date||""}${x.end_date?` ~ ${x.end_date}`:""}</time><span class="status-chip ${x.status==="버킷리스트"?"bucket":x.status==="완료"?"done":""}">${esc(x.status||"예정")}</span></div>`).join(""):'<div class="empty-mini">조건에 맞는 여행이 없습니다.</div>';
+ tripBoard.innerHTML=list.length?list.map(x=>`<div class="board-row" data-trip="${x.id}"><span>${esc(x.trip_type)}</span><span>${esc(x.trip_type==="국내"?(regionLabel(normalizeRegionKey(x.region))+(x.city?` · ${x.city}`:"")):(x.country||"-"))}</span><b>${esc(x.title)}${x.author_name?` <small class="author-note">by ${esc(x.author_name)}</small>`:""}</b><time>${x.start_date||""}${x.end_date?` ~ ${x.end_date}`:""}</time><span class="status-chip ${x.status==="버킷리스트"?"bucket":x.status==="완료"?"done":""}">${esc(x.status||"예정")}</span></div>`).join(""):'<div class="empty-mini">조건에 맞는 여행이 없습니다.</div>';
  $$("#tripBoard [data-trip]").forEach(el=>el.onclick=()=>editTrip(Number(el.dataset.trip)));
 }
 boardSearch.oninput=renderBoard;boardType.onchange=renderBoard;boardStatus.onchange=renderBoard;
@@ -574,15 +677,33 @@ budgetTripSelect.onchange=renderBudget;
 function fillEditTripSelects(){const o='<option value="">미지정</option>'+trips.map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join("");eventTripEdit.innerHTML=o;budgetTripEdit.innerHTML=o}
 
 /* 여행 CRUD */
-function resetTripForm(){tripFormPublic.reset();tripEditId.value="";deleteTripBtn.hidden=true;tripModalTitle.textContent="여행 추가";tripStatusEdit.value="예정";tripTypeEdit.value="국내"}
+function resetTripForm(){
+ tripFormPublic.reset();tripEditId.value="";deleteTripBtn.hidden=true;tripModalTitle.textContent="여행 추가";
+ tripStatusEdit.value="예정";tripTypeEdit.value="국내";tripCountryEdit.value="대한민국";
+ syncTripLocationFields("","","대한민국");
+}
 function newTrip(){resetTripForm();openModal("tripModal")}
-function editTrip(id){const x=trips.find(v=>v.id===id);if(!x)return;tripEditId.value=x.id;tripTypeEdit.value=x.trip_type;tripStatusEdit.value=x.status;tripTitleEdit.value=x.title;tripStartEdit.value=x.start_date||"";tripEndEdit.value=x.end_date||"";tripRegionEdit.value=x.region||"";tripCityEdit.value=x.city||"";tripCountryEdit.value=x.country||"";tripMemoEdit.value=x.memo||"";tripAuthorEdit.value=x.author_name||"";tripModalTitle.textContent="여행 수정";deleteTripBtn.hidden=false;openModal("tripModal")}
+function editTrip(id){
+ const x=trips.find(v=>v.id===id);if(!x)return;
+ tripEditId.value=x.id;tripTypeEdit.value=x.trip_type;tripStatusEdit.value=x.status;tripTitleEdit.value=x.title;
+ tripStartEdit.value=x.start_date||"";tripEndEdit.value=x.end_date||"";
+ tripCountryEdit.value=x.country|| (x.trip_type==="국내"?"대한민국":"");
+ syncTripLocationFields(x.region||"",x.city||"",tripCountryEdit.value);
+ tripMemoEdit.value=x.memo||"";tripAuthorEdit.value=x.author_name||"";
+ tripModalTitle.textContent="여행 수정";deleteTripBtn.hidden=false;openModal("tripModal");
+}
+tripTypeEdit.onchange=()=>syncTripLocationFields("","",tripTypeEdit.value==="국내"?"대한민국":"");
+tripRegionEdit.onchange=()=>populateTripCities(tripRegionEdit.value,"");
 tripFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("tripFormPublic");
  const existing=tripEditId.value;const id=existing?Number(existing):null;
  const tripStart=tripStartEdit.value||null,tripEnd=tripEndEdit.value||tripStart;
  if(tripStart&&tripEnd&&tripEnd<tripStart){showFormError("tripFormPublic",new Error("종료일은 시작일보다 빠를 수 없습니다."));return}
- const p={trip_type:tripTypeEdit.value,status:tripStatusEdit.value,title:tripTitleEdit.value.trim(),start_date:tripStart,end_date:tripEnd,region:tripRegionEdit.value.trim(),city:tripCityEdit.value.trim(),country:tripCountryEdit.value.trim(),memo:tripMemoEdit.value.trim(),author_name:tripAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
+ const tripRegion=tripTypeEdit.value==="국내"?normalizeRegionKey(tripRegionEdit.value):"";
+ const tripCity=tripTypeEdit.value==="국내"?tripCityEdit.value:"";
+ if(tripTypeEdit.value==="국내"&&!tripRegion){showFormError("tripFormPublic",new Error("국내 지역을 선택해 주세요."));return}
+ if(tripTypeEdit.value==="국내"&&!METRO_REGIONS.has(tripRegion)&&!tripCity){showFormError("tripFormPublic",new Error("도시를 선택해 주세요."));return}
+ const p={trip_type:tripTypeEdit.value,status:tripStatusEdit.value,title:tripTitleEdit.value.trim(),start_date:tripStart,end_date:tripEnd,region:tripRegion,city:tripCity,country:tripCountryEdit.value.trim(),memo:tripMemoEdit.value.trim(),author_name:tripAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
  try{
   const saved=(id&&id>0)?await apiData("travel_trips","PUT",p,id):await apiData("travel_trips","POST",p);
   if(id)localDelete("trips",id);if(saved)localUpsert("trips",saved);
