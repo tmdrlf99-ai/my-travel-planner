@@ -816,20 +816,20 @@ function calendarHoverItems(k){
  const add=(key,item)=>{if(!seen.has(key)){seen.add(key);rows.push(item)}};
  trips.filter(x=>tripOnDate(x,k)).forEach(x=>add(`trip-${x.id}`,{
   location:compactTripLocation(x),
-  title:x.title||"여행",
-  meta:`여행 · ${calendarRangeLabel(x.start_date,x.end_date)}`
+  memo:String(x.memo||x.title||"").trim(),
+  date:calendarRangeLabel(x.start_date,x.end_date)
  }));
  places.filter(x=>placeOnDate(x,k)).forEach(x=>add(`place-${x.id}`,{
   location:compactPlaceLocation(x),
-  title:x.memo||((x.place_type==="국내"?domesticPlaceText(x):x.place_name)||"방문지"),
-  meta:`${x.status||"방문지"} · ${calendarRangeLabel(x.start_date,x.end_date)}`
+  memo:String(x.memo||"").trim(),
+  date:calendarRangeLabel(x.start_date,x.end_date)
  }));
  events.filter(x=>x.event_date===k).forEach(x=>{
   const trip=x.trip_id?trips.find(t=>String(t.id)===String(x.trip_id)):null;
   add(`event-${x.id}`,{
    location:trip?compactTripLocation(trip):"",
-   title:x.title||"일정",
-   meta:`${x.category||"일정"} · ${shortCalendarDate(x.event_date)}`
+   memo:String(x.description||x.title||"").trim(),
+   date:shortCalendarDate(x.event_date)
   });
  });
  return rows;
@@ -853,7 +853,7 @@ function showCalendarHoverTooltip(button,k){
  if(!items.length){hideCalendarHoverTooltip();return}
  const tip=ensureCalendarHoverTooltip();
  const visible=items.slice(0,4);
- tip.innerHTML=`<strong>${Number(k.slice(5,7))}월 ${Number(k.slice(8,10))}일</strong><div class="calendar-hover-list">${visible.map(item=>`<div class="calendar-hover-item">${item.location?`<b>${esc(item.location)}</b>`:""}<span>${esc(item.title)}</span><small>${esc(item.meta)}</small></div>`).join("")}</div>${items.length>4?`<em>외 ${items.length-4}건</em>`:""}`;
+ tip.innerHTML=`<div class="calendar-hover-list">${visible.map(item=>`<div class="calendar-hover-item">${item.location?`<b>${esc(item.location)}</b>`:""}${item.memo?`<span>${esc(item.memo)}</span>`:""}<small>${esc(item.date)}</small></div>`).join("")}</div>${items.length>4?`<em>외 ${items.length-4}건</em>`:""}`;
  tip.hidden=false;
  tip.style.left="0px";tip.style.top="0px";
  const r=button.getBoundingClientRect(),tr=tip.getBoundingClientRect();
