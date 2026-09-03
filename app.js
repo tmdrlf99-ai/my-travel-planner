@@ -121,6 +121,47 @@ const PLACE_PRESETS={
  }
 };
 
+
+const KR_REGION_CITIES={
+ "서울":["종로구","중구","용산구","성동구","광진구","동대문구","중랑구","성북구","강북구","도봉구","노원구","은평구","서대문구","마포구","양천구","강서구","구로구","금천구","영등포구","동작구","관악구","서초구","강남구","송파구","강동구"],
+ "부산":["중구","서구","동구","영도구","부산진구","동래구","남구","북구","해운대구","사하구","금정구","강서구","연제구","수영구","사상구","기장군"],
+ "대구":["중구","동구","서구","남구","북구","수성구","달서구","달성군","군위군"],
+ "인천":["중구","동구","미추홀구","연수구","남동구","부평구","계양구","서구","강화군","옹진군"],
+ "광주":["동구","서구","남구","북구","광산구"],
+ "대전":["동구","중구","서구","유성구","대덕구"],
+ "울산":["중구","남구","동구","북구","울주군"],
+ "세종":["세종시"],
+ "경기":["수원","성남","의정부","안양","부천","광명","평택","동두천","안산","고양","과천","구리","남양주","오산","시흥","군포","의왕","하남","용인","파주","이천","안성","김포","화성","광주","양주","포천","여주","연천","가평","양평"],
+ "강원":["춘천","원주","강릉","동해","태백","속초","삼척","홍천","횡성","영월","평창","정선","철원","화천","양구","인제","고성","양양"],
+ "충북":["청주","충주","제천","보은","옥천","영동","증평","진천","괴산","음성","단양"],
+ "충남":["천안","공주","보령","아산","서산","논산","계룡","당진","금산","부여","서천","청양","홍성","예산","태안"],
+ "전북":["전주","군산","익산","정읍","남원","김제","완주","진안","무주","장수","임실","순창","고창","부안"],
+ "전남":["목포","여수","순천","나주","광양","담양","곡성","구례","고흥","보성","화순","장흥","강진","해남","영암","무안","함평","영광","장성","완도","진도","신안"],
+ "경북":["포항","경주","김천","안동","구미","영주","영천","상주","문경","경산","의성","청송","영양","영덕","청도","고령","성주","칠곡","예천","봉화","울진","울릉"],
+ "경남":["창원","진주","통영","사천","김해","밀양","거제","양산","의령","함안","창녕","고성","남해","하동","산청","함양","거창","합천"],
+ "제주":["제주","서귀포"]
+};
+
+// 자주 쓰는 도시 중심좌표. 없는 시·군은 시·도 중심좌표를 사용합니다.
+const KR_CITY_COORDS={
+ "수원":[37.2636,127.0286],"성남":[37.4200,127.1265],"고양":[37.6584,126.8320],"용인":[37.2411,127.1776],"화성":[37.1995,126.8312],"파주":[37.7599,126.7800],"김포":[37.6153,126.7156],
+ "춘천":[37.8813,127.7298],"원주":[37.3422,127.9202],"강릉":[37.7519,128.8761],"속초":[38.2070,128.5918],"삼척":[37.4499,129.1651],"양양":[38.0754,128.6191],
+ "청주":[36.6424,127.4890],"충주":[36.9910,127.9259],"제천":[37.1326,128.1910],"단양":[36.9845,128.3656],
+ "천안":[36.8151,127.1139],"공주":[36.4466,127.1190],"아산":[36.7898,127.0018],"서산":[36.7845,126.4503],"보령":[36.3334,126.6129],"태안":[36.7456,126.2980],
+ "전주":[35.8242,127.1480],"군산":[35.9677,126.7368],"익산":[35.9483,126.9576],"남원":[35.4164,127.3904],"부안":[35.7317,126.7332],
+ "목포":[34.8118,126.3922],"여수":[34.7604,127.6622],"순천":[34.9506,127.4872],"나주":[35.0161,126.7108],"광양":[34.9407,127.6959],"해남":[34.5733,126.5990],"완도":[34.3111,126.7550],
+ "포항":[36.0190,129.3435],"경주":[35.8562,129.2247],"안동":[36.5684,128.7294],"구미":[36.1195,128.3446],"경산":[35.8251,128.7415],"울진":[36.9931,129.4004],"울릉":[37.4844,130.9057],"영덕":[36.4150,129.3656],
+ "창원":[35.2279,128.6811],"진주":[35.1800,128.1076],"통영":[34.8544,128.4332],"김해":[35.2285,128.8894],"거제":[34.8806,128.6211],"남해":[34.8377,127.8926],
+ "제주":[33.4996,126.5312],"서귀포":[33.2541,126.5601]
+};
+const KR_REGION_LABELS={"경기":"경기도","강원":"강원특별자치도","충북":"충청북도","충남":"충청남도","전북":"전북특별자치도","전남":"전라남도","경북":"경상북도","경남":"경상남도","제주":"제주특별자치도"};
+const regionLabel=r=>KR_REGION_LABELS[r]||r;
+const domesticPlaceText=x=>{
+ const r=x.region_name||"", c=x.city_name||"";
+ if(r&&c) return `${regionLabel(r)} · ${c}`;
+ return x.place_name||r||c||"";
+};
+
 const KR_HOLIDAYS_2026={
  "2026-01-01":"신정",
  "2026-02-16":"설날 연휴","2026-02-17":"설날","2026-02-18":"설날 연휴",
@@ -226,7 +267,7 @@ function renderCalendar(){
 function renderDay(){
  const list=[...events.filter(x=>x.event_date===selectedDate).map(x=>({id:x.id,kind:"event",type:x.category||"일정",title:x.title,sub:x.description||"",author:x.author_name||""})),
  ...trips.filter(x=>tripOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"trip",type:x.start_date===selectedDate?"출발":x.end_date===selectedDate?"종료":"여행중",title:x.title,sub:x.city||x.country||x.region||"",author:x.author_name||""})),
- ...places.filter(x=>placeOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"place",type:x.status==="버킷리스트"?"방문계획":"방문지",title:x.place_name,sub:x.memo||x.place_type||"",author:x.author_name||""}))];
+ ...places.filter(x=>placeOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"place",type:x.status==="버킷리스트"?"방문계획":"방문지",title:x.place_type==="국내"?domesticPlaceText(x):x.place_name,sub:x.memo||x.place_type||"",author:x.author_name||""}))];
  dayTitle.textContent=selectedDate?`${Number(selectedDate.slice(5,7))}월 ${Number(selectedDate.slice(8,10))}일 일정`:"선택 날짜 일정";dayCount.textContent=`${list.length}건`;
  dayEvents.innerHTML=list.length?list.map(x=>`<div class="day-event" data-kind="${x.kind}" data-id="${x.id}"><time>${esc(x.type)}</time><div><strong>${esc(x.title)}</strong><small>${esc(x.sub)}${x.author?` · 작성 ${esc(x.author)}`:""}</small></div></div>`).join(""):'<div class="empty">날짜를 선택하면 해당 일정이 표시됩니다.</div>';
  $$("#dayEvents .day-event").forEach(el=>el.onclick=()=>{
@@ -272,9 +313,9 @@ function renderKorea(){
      .setLngLat([Number(x.longitude),Number(x.latitude)])
      .addTo(koreaMap);
    el.addEventListener("click",()=>{
-     koreaRegion.textContent=x.place_name;
+     koreaRegion.textContent=domesticPlaceText(x);
      koreaDesc.textContent=`${x.status}${x.author_name?` · 작성 ${x.author_name}`:""}${x.memo?` · ${x.memo}`:""}`;
-     koreaTripList.innerHTML=`<div class="mini-trip"><b>${esc(x.place_name)}</b><small>${esc(x.status)}${x.author_name?` · ${esc(x.author_name)}`:""}</small></div>`;
+     koreaTripList.innerHTML=`<div class="mini-trip"><b>${esc(domesticPlaceText(x))}</b><small>${esc(x.status)}${x.author_name?` · ${esc(x.author_name)}`:""}</small></div>`;
    });
    koreaMapMarkers.push(marker);
  });
@@ -318,10 +359,18 @@ function renderWorld(){
 }
 
 
-function populatePlaceNames(type,current=""){
+function populatePlaceCities(region,current=""){
+ const cities=KR_REGION_CITIES[region]||[];
+ placeCityEdit.innerHTML=cities.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+ if(current&&cities.includes(current)) placeCityEdit.value=current;
+ placeCityWrap.hidden=placeTypeEdit.value!=="국내";
+}
+function populatePlaceNames(type,current="",currentCity=""){
  const names=Object.keys(PLACE_PRESETS[type]||{});
- placeNameEdit.innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+ placeNameEdit.innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(type==="국내"?regionLabel(n):n)}</option>`).join("");
  if(current&&names.includes(current)) placeNameEdit.value=current;
+ if(type==="국내") populatePlaceCities(placeNameEdit.value,currentCity);
+ else { placeCityEdit.innerHTML=""; placeCityWrap.hidden=true; }
 }
 function renderPlaces(){
  const dv=places.filter(x=>x.place_type==="국내"&&x.status==="방문").length;
@@ -331,11 +380,11 @@ function renderPlaces(){
  domesticVisitedCount.textContent=dv;domesticBucketCount.textContent=db;overseasVisitedCount.textContent=ov;overseasBucketCount.textContent=ob;
 
  const q=placeSearch.value.trim().toLowerCase(),type=placeTypeFilter.value,status=placeStatusFilter.value;
- const rows=places.filter(x=>(!type||x.place_type===type)&&(!status||x.status===status)&&(`${x.place_name} ${x.memo||""} ${x.author_name||""}`.toLowerCase().includes(q)));
+ const rows=places.filter(x=>(!type||x.place_type===type)&&(!status||x.status===status)&&(`${x.place_name} ${x.region_name||""} ${x.city_name||""} ${x.memo||""} ${x.author_name||""}`.toLowerCase().includes(q)));
  placeList.innerHTML=rows.length?rows.map(x=>`<div class="place-row" data-place="${x.id}">
    <span>${esc(x.place_type)}</span>
    <span class="place-status ${x.status==="방문"?"visited":"bucket"}">${esc(x.status)}</span>
-   <b>${esc(x.place_name)}</b>
+   <b>${esc(x.place_type==="국내"?domesticPlaceText(x):x.place_name)}</b>
    <small class="place-memo">${esc(x.memo||"-")}</small>
    <small class="place-author">${esc(x.author_name||"-")}</small>
  </div>`).join(""):'<div class="empty-mini">등록된 방문지가 없습니다.</div>';
@@ -350,19 +399,27 @@ function newPlace(){resetPlaceForm();openModal("placeModal")}
 function editPlace(id){
  const x=places.find(v=>v.id===id);if(!x)return;
  placeEditId.value=x.id;placeTypeEdit.value=x.place_type;placeStatusEdit.value=x.status;
- populatePlaceNames(x.place_type,x.place_name);placeStartEdit.value=x.start_date||"";placeEndEdit.value=x.end_date||"";placeAuthorEdit.value=x.author_name||"";placeMemoEdit.value=x.memo||"";
+ const legacyRegion=x.region_name||((x.place_type==="국내"&&PLACE_PRESETS["국내"][x.place_name])?x.place_name:"");
+ const legacyCity=x.city_name||((x.place_type==="국내"&&!legacyRegion)?x.place_name:"");
+ populatePlaceNames(x.place_type,x.place_type==="국내"?legacyRegion:x.place_name,legacyCity);
+ placeStartEdit.value=x.start_date||"";placeEndEdit.value=x.end_date||"";placeAuthorEdit.value=x.author_name||"";placeMemoEdit.value=x.memo||"";
  placeModalTitle.textContent="방문지 수정";deletePlaceBtn.hidden=false;openModal("placeModal");
 }
 placeTypeEdit.onchange=()=>populatePlaceNames(placeTypeEdit.value);
+placeNameEdit.onchange=()=>{if(placeTypeEdit.value==="국내")populatePlaceCities(placeNameEdit.value)};
 placeFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("placeFormPublic");
  const existing=placeEditId.value;const id=existing?Number(existing):null;
- const type=placeTypeEdit.value,name=placeNameEdit.value,coord=(PLACE_PRESETS[type]||{})[name];
+ const type=placeTypeEdit.value;
+ const region=type==="국내"?placeNameEdit.value:"";
+ const city=type==="국내"?placeCityEdit.value:"";
+ const name=type==="국내"?(city||region):placeNameEdit.value;
+ const coord=type==="국내"?(KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]):(PLACE_PRESETS["해외"]||{})[name];
  if(!coord)return;
  const now=new Date().toISOString();
  const startDate=placeStartEdit.value||null,endDate=placeEndEdit.value||startDate;
  if(startDate&&endDate&&endDate<startDate){showFormError("placeFormPublic",new Error("종료일은 방문/계획일보다 빠를 수 없습니다."));return}
- const p={place_type:type,status:placeStatusEdit.value,place_name:name,latitude:coord[0],longitude:coord[1],start_date:startDate,end_date:endDate,author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:now};
+ const p={place_type:type,status:placeStatusEdit.value,place_name:name,region_name:region,city_name:city,latitude:coord[0],longitude:coord[1],start_date:startDate,end_date:endDate,author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:now};
  try{
   let saved;
   if(id&&id>0) saved=await apiData("travel_places","PUT",p,id);
