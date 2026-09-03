@@ -43,6 +43,25 @@ const KR_HOLIDAYS_2026={
 
 let koreaMap=null,worldMap=null,koreaMapMarkers=[],worldMapMarkers=[];
 
+
+function friendlyError(err){
+ const raw=(err&&err.message)||String(err||"");
+ if(/failed to fetch/i.test(raw)) return "데이터 서버에 연결할 수 없습니다. 인터넷 연결 또는 Supabase 연결 설정을 확인해 주세요.";
+ if(/row-level security|rls/i.test(raw)) return "현재 데이터 저장 권한이 설정되지 않았습니다. Supabase 권한 설정을 확인해 주세요.";
+ if(/relation .* does not exist|could not find/i.test(raw)) return "필요한 데이터 테이블이 아직 준비되지 않았습니다. Supabase SQL 설정을 먼저 확인해 주세요.";
+ return raw || "저장 중 오류가 발생했습니다.";
+}
+function showFormError(formId,err){
+ const el=document.getElementById(formId+"Error");
+ if(!el){toast(friendlyError(err));return;}
+ el.textContent=friendlyError(err);
+ el.hidden=false;
+}
+function clearFormError(formId){
+ const el=document.getElementById(formId+"Error");
+ if(el){el.hidden=true;el.textContent="";}
+}
+
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.hidden=true,2200)}
 function openModal(id){$("#editorBackdrop").hidden=false;$("#"+id).hidden=false}
 function closeModal(id){$("#"+id).hidden=true;if($$(".editor-modal:not([hidden])").length===0)$("#editorBackdrop").hidden=true}
@@ -50,14 +69,21 @@ $$("[data-close]").forEach(b=>b.addEventListener("click",()=>closeModal(b.datase
 $("#editorBackdrop").addEventListener("click",()=>{$$(".editor-modal").forEach(m=>m.hidden=true);$("#editorBackdrop").hidden=true});
 
 async function loadAll(){
- const [t,e,b,p]=await Promise.all([
-  sb.from("travel_trips").select("*").eq("is_visible",true).order("start_date"),
-  sb.from("travel_events").select("*").eq("is_visible",true).order("event_date"),
-  sb.from("travel_budgets").select("*").order("sort_order"),
-  sb.from("travel_places").select("*").order("created_at",{ascending:false})
- ]);
- trips=t.data||[];events=e.data||[];budgets=b.data||[];places=p.data||[];
- renderAll();
+ try{
+  const [t,e,b,p]=await Promise.all([
+   sb.from("travel_trips").select("*").eq("is_visible",true).order("start_date"),
+   sb.from("travel_events").select("*").eq("is_visible",true).order("event_date"),
+   sb.from("travel_budgets").select("*").order("sort_order"),
+   sb.from("travel_places").select("*").order("created_at",{ascending:false})
+  ]);
+  trips=t.data||[];events=e.data||[];budgets=b.data||[];places=p.data||[];
+  renderAll();
+ }catch(err){
+  console.error("loadAll failed",err);
+  trips=[];events=[];budgets=[];places=[];
+  renderAll();
+  toast(friendlyError(err));
+ }
 }
 function renderAll(){renderHero();renderUpcoming();renderCalendar();renderKorea();renderWorld();renderPlaces();renderBoard();renderBudgetOptions();renderBudget();fillEditTripSelects()}
 function renderHero(){
@@ -229,17 +255,17 @@ function editPlace(id){
 }
 placeTypeEdit.onchange=()=>populatePlaceNames(placeTypeEdit.value);
 placeFormPublic.onsubmit=async e=>{
- e.preventDefault();
+ e.preventDefault();clearFormError("placeFormPublic");
  const id=placeEditId.value,type=placeTypeEdit.value,name=placeNameEdit.value,coord=(PLACE_PRESETS[type]||{})[name];
  if(!coord) return alert("선택한 방문지의 지도 좌표를 찾을 수 없습니다.");
  const p={place_type:type,status:placeStatusEdit.value,place_name:name,latitude:coord[0],longitude:coord[1],author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:new Date().toISOString()};
  const r=id?await sb.from("travel_places").update(p).eq("id",id):await sb.from("travel_places").insert(p);
- if(r.error)return alert(r.error.message);
+ if(r.error){showFormError("placeFormPublic",r.error);return;}
  closeModal("placeModal");toast(id?"방문지가 수정되었습니다.":"방문지가 등록되었습니다.");await loadAll();
 }
 deletePlaceBtn.onclick=async()=>{
  const id=placeEditId.value;if(!id||!confirm("이 방문지 기록을 삭제하시겠습니까?"))return;
- const r=await sb.from("travel_places").delete().eq("id",id);if(r.error)return alert(r.error.message);
+ const r=await sb.from("travel_places").delete().eq("id",id);if(r.error){showFormError("placeFormPublic",r.error);return;}
  closeModal("placeModal");toast("방문지가 삭제되었습니다.");await loadAll();
 };
 placeTypeFilter.onchange=renderPlaces;placeStatusFilter.onchange=renderPlaces;placeSearch.oninput=renderPlaces;
@@ -266,25 +292,31 @@ function fillEditTripSelects(){const o='<option value="">미지정</option>'+tri
 function resetTripForm(){tripFormPublic.reset();tripEditId.value="";deleteTripBtn.hidden=true;tripModalTitle.textContent="여행 추가";tripStatusEdit.value="예정";tripTypeEdit.value="국내"}
 function newTrip(){resetTripForm();openModal("tripModal")}
 function editTrip(id){const x=trips.find(v=>v.id===id);if(!x)return;tripEditId.value=x.id;tripTypeEdit.value=x.trip_type;tripStatusEdit.value=x.status;tripTitleEdit.value=x.title;tripStartEdit.value=x.start_date||"";tripEndEdit.value=x.end_date||"";tripRegionEdit.value=x.region||"";tripCityEdit.value=x.city||"";tripCountryEdit.value=x.country||"";tripMemoEdit.value=x.memo||"";tripAuthorEdit.value=x.author_name||"";tripModalTitle.textContent="여행 수정";deleteTripBtn.hidden=false;openModal("tripModal")}
-tripFormPublic.onsubmit=async e=>{e.preventDefault();const id=tripEditId.value,p={trip_type:tripTypeEdit.value,status:tripStatusEdit.value,title:tripTitleEdit.value.trim(),start_date:tripStartEdit.value||null,end_date:tripEndEdit.value||null,region:tripRegionEdit.value.trim(),city:tripCityEdit.value.trim(),country:tripCountryEdit.value.trim(),memo:tripMemoEdit.value.trim(),author_name:tripAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()},r=id?await sb.from("travel_trips").update(p).eq("id",id):await sb.from("travel_trips").insert(p);if(r.error)return alert(r.error.message);closeModal("tripModal");toast(id?"여행이 수정되었습니다.":"여행이 등록되었습니다.");await loadAll()}
-deleteTripBtn.onclick=async()=>{const id=tripEditId.value;if(!id||!confirm("이 여행과 연결된 일정·예산까지 삭제될 수 있습니다. 정말 삭제하시겠습니까?"))return;const r=await sb.from("travel_trips").delete().eq("id",id);if(r.error)return alert(r.error.message);closeModal("tripModal");toast("여행이 삭제되었습니다.");await loadAll()}
+tripFormPublic.onsubmit=async e=>{e.preventDefault();clearFormError("tripFormPublic");const id=tripEditId.value,p={trip_type:tripTypeEdit.value,status:tripStatusEdit.value,title:tripTitleEdit.value.trim(),start_date:tripStartEdit.value||null,end_date:tripEndEdit.value||null,region:tripRegionEdit.value.trim(),city:tripCityEdit.value.trim(),country:tripCountryEdit.value.trim(),memo:tripMemoEdit.value.trim(),author_name:tripAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()},r=id?await sb.from("travel_trips").update(p).eq("id",id):await sb.from("travel_trips").insert(p);if(r.error){showFormError("tripFormPublic",r.error);return;}closeModal("tripModal");toast(id?"여행이 수정되었습니다.":"여행이 등록되었습니다.");await loadAll()}
+deleteTripBtn.onclick=async()=>{const id=tripEditId.value;if(!id||!confirm("이 여행과 연결된 일정·예산까지 삭제될 수 있습니다. 정말 삭제하시겠습니까?"))return;const r=await sb.from("travel_trips").delete().eq("id",id);if(r.error){showFormError("tripFormPublic",r.error);return;}closeModal("tripModal");toast("여행이 삭제되었습니다.");await loadAll()}
 
 /* 일정 CRUD */
 function resetEventForm(){eventFormPublic.reset();eventEditId.value="";deleteEventBtn.hidden=true;eventModalTitle.textContent="일정 추가";eventCategoryEdit.value="일정";eventDateEdit.value=selectedDate||fmt(new Date())}
 function newEvent(){resetEventForm();openModal("eventModal")}
 function editEvent(id){const x=events.find(v=>v.id===id);if(!x)return;eventEditId.value=x.id;eventTripEdit.value=x.trip_id||"";eventDateEdit.value=x.event_date;eventCategoryEdit.value=x.category||"일정";eventTitleEdit.value=x.title;eventDescEdit.value=x.description||"";eventAuthorEdit.value=x.author_name||"";eventModalTitle.textContent="일정 수정";deleteEventBtn.hidden=false;openModal("eventModal")}
-eventFormPublic.onsubmit=async e=>{e.preventDefault();const id=eventEditId.value,p={trip_id:eventTripEdit.value||null,event_date:eventDateEdit.value,category:eventCategoryEdit.value.trim()||"일정",title:eventTitleEdit.value.trim(),description:eventDescEdit.value.trim(),author_name:eventAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()},r=id?await sb.from("travel_events").update(p).eq("id",id):await sb.from("travel_events").insert(p);if(r.error)return alert(r.error.message);selectedDate=eventDateEdit.value;closeModal("eventModal");toast(id?"일정이 수정되었습니다.":"일정이 등록되었습니다.");await loadAll()}
+eventFormPublic.onsubmit=async e=>{e.preventDefault();clearFormError("eventFormPublic");const id=eventEditId.value,p={trip_id:eventTripEdit.value||null,event_date:eventDateEdit.value,category:eventCategoryEdit.value.trim()||"일정",title:eventTitleEdit.value.trim(),description:eventDescEdit.value.trim(),author_name:eventAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()},r=id?await sb.from("travel_events").update(p).eq("id",id):await sb.from("travel_events").insert(p);if(r.error){showFormError("eventFormPublic",r.error);return;}selectedDate=eventDateEdit.value;closeModal("eventModal");toast(id?"일정이 수정되었습니다.":"일정이 등록되었습니다.");await loadAll()}
 deleteEventBtn.onclick=async()=>{const id=eventEditId.value;if(!id||!confirm("이 일정을 삭제하시겠습니까?"))return;const r=await sb.from("travel_events").delete().eq("id",id);if(r.error)return alert(r.error.message);closeModal("eventModal");toast("일정이 삭제되었습니다.");await loadAll()}
 
 /* 예산 CRUD */
 function resetBudgetForm(){budgetFormPublic.reset();budgetEditId.value="";deleteBudgetBtn.hidden=true;budgetModalTitle.textContent="예산 추가"}
 function newBudget(){resetBudgetForm();budgetTripEdit.value=budgetTripSelect.value||"";openModal("budgetModal")}
 function editBudget(id){const x=budgets.find(v=>v.id===id);if(!x)return;budgetEditId.value=x.id;budgetTripEdit.value=x.trip_id||"";budgetCategoryEdit.value=x.category;budgetAmountEdit.value=x.budget_amount||0;budgetSpentEdit.value=x.spent_amount||0;budgetAuthorEdit.value=x.author_name||"";budgetModalTitle.textContent="예산 수정";deleteBudgetBtn.hidden=false;openModal("budgetModal")}
-budgetFormPublic.onsubmit=async e=>{e.preventDefault();const id=budgetEditId.value,p={trip_id:budgetTripEdit.value||null,category:budgetCategoryEdit.value,budget_amount:Number(budgetAmountEdit.value)||0,spent_amount:Number(budgetSpentEdit.value)||0,author_name:budgetAuthorEdit.value.trim(),sort_order:100,updated_at:new Date().toISOString()},r=id?await sb.from("travel_budgets").update(p).eq("id",id):await sb.from("travel_budgets").insert(p);if(r.error)return alert(r.error.message);closeModal("budgetModal");toast(id?"예산이 수정되었습니다.":"예산이 등록되었습니다.");await loadAll()}
-deleteBudgetBtn.onclick=async()=>{const id=budgetEditId.value;if(!id||!confirm("이 예산 항목을 삭제하시겠습니까?"))return;const r=await sb.from("travel_budgets").delete().eq("id",id);if(r.error)return alert(r.error.message);closeModal("budgetModal");toast("예산이 삭제되었습니다.");await loadAll()}
+budgetFormPublic.onsubmit=async e=>{e.preventDefault();clearFormError("budgetFormPublic");const id=budgetEditId.value,p={trip_id:budgetTripEdit.value||null,category:budgetCategoryEdit.value,budget_amount:Number(budgetAmountEdit.value)||0,spent_amount:Number(budgetSpentEdit.value)||0,author_name:budgetAuthorEdit.value.trim(),sort_order:100,updated_at:new Date().toISOString()},r=id?await sb.from("travel_budgets").update(p).eq("id",id):await sb.from("travel_budgets").insert(p);if(r.error){showFormError("budgetFormPublic",r.error);return;}closeModal("budgetModal");toast(id?"예산이 수정되었습니다.":"예산이 등록되었습니다.");await loadAll()}
+deleteBudgetBtn.onclick=async()=>{const id=budgetEditId.value;if(!id||!confirm("이 예산 항목을 삭제하시겠습니까?"))return;const r=await sb.from("travel_budgets").delete().eq("id",id);if(r.error){showFormError("budgetFormPublic",r.error);return;}closeModal("budgetModal");toast("예산이 삭제되었습니다.");await loadAll()}
 
 openTripCreate.onclick=newTrip;openTripCreate2.onclick=newTrip;openEventCreate.onclick=newEvent;openBudgetCreate.onclick=newBudget;
 $$(".nav a,.quick-grid a").forEach(a=>a.onclick=e=>{const id=(a.dataset.target||a.getAttribute("href")?.replace("#",""));if(id&&document.getElementById(id)){e.preventDefault();document.getElementById(id).scrollIntoView({behavior:"smooth"})}});
 globalSearchBtn.onclick=()=>{const q=globalSearch.value.trim().toLowerCase();if(!q)return;boardSearch.value=q;renderBoard();document.getElementById("board").scrollIntoView({behavior:"smooth"})};
 const ids=["home","calendar","korea","world","places","board","budget"];addEventListener("scroll",()=>{let cur="home";ids.forEach(id=>{const el=document.getElementById(id);if(el&&el.getBoundingClientRect().top<140)cur=id});$$(".nav a").forEach(a=>a.classList.toggle("active",a.dataset.target===cur))},{passive:true});
 loadAll();
+
+window.addEventListener("unhandledrejection",e=>{
+  console.error("Unhandled promise rejection",e.reason);
+  e.preventDefault();
+  toast(friendlyError(e.reason));
+});

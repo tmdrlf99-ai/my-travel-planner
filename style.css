@@ -1155,3 +1155,212 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
 @media(min-width:821px){
   .mobile-nav{display:none!important}
 }
+
+
+/* ===== v5.5 모바일 세로 간격 통일 + 저장 오류 UX 개선 ===== */
+:root{
+  --mobile-gap-xs:6px;
+  --mobile-gap-sm:10px;
+  --mobile-gap-md:14px;
+  --mobile-gap-lg:18px;
+  --mobile-gap-xl:24px;
+}
+
+/* 공통 에러 안내 */
+.form-error{
+  margin:0 0 12px 0;
+  padding:10px 12px;
+  border:1px solid #efcaca;
+  border-radius:10px;
+  background:#fff6f6;
+  color:#b44d4d;
+  font-size:13px!important;
+  font-weight:700;
+  line-height:1.45;
+}
+.form-error[hidden]{display:none!important}
+
+/* 모바일 레이아웃 간격 완전 통일 */
+@media(max-width:820px){
+
+  /* 메인 섹션 간격 */
+  .section,
+  .panel{
+    margin-top:12px!important;
+    margin-bottom:0!important;
+    padding:18px 12px!important;
+  }
+
+  .section:first-of-type{
+    margin-top:0!important;
+  }
+
+  /* 섹션 헤더 */
+  .section-head,
+  .section-head-actions{
+    margin:0 0 14px 0!important;
+    padding:0!important;
+    gap:8px!important;
+  }
+
+  .section-head>div,
+  .section-head-actions>div{
+    margin:0!important;
+    padding:0!important;
+  }
+
+  .section-head span,
+  .section-head h2,
+  .section-head p{
+    margin-left:0!important;
+    margin-right:0!important;
+  }
+
+  .section-head span{margin-bottom:4px!important}
+  .section-head h2{margin-top:0!important;margin-bottom:6px!important}
+  .section-head p{margin-top:0!important;margin-bottom:0!important}
+
+  /* 카드/요약 그리드 */
+  .quick-grid,
+  .summary-stats,
+  .budget-summary-grid,
+  .place-summary-grid{
+    gap:10px!important;
+    margin-top:12px!important;
+    margin-bottom:12px!important;
+  }
+
+  /* 버튼 */
+  .soft-action,
+  .primary-btn,
+  .ghost-btn{
+    margin-top:0!important;
+    margin-bottom:0!important;
+  }
+
+  /* 검색/필터 */
+  .board-tools,
+  .place-tools,
+  .budget-filter{
+    margin-top:0!important;
+    margin-bottom:12px!important;
+    gap:10px!important;
+  }
+
+  /* 지도 섹션 */
+  .map-grid,
+  .korea-grid,
+  .world-grid{
+    gap:12px!important;
+    margin-top:0!important;
+  }
+
+  .korea-real-map,
+  .world-real-map{
+    margin:0!important;
+  }
+
+  .map-info{
+    margin:0!important;
+    padding:14px!important;
+  }
+
+  .map-info>*:first-child{margin-top:0!important}
+  .map-info>*:last-child{margin-bottom:0!important}
+
+  /* 목록 행 */
+  .place-row,
+  .board-row,
+  .budget-row,
+  .day-event{
+    margin:0!important;
+  }
+
+  /* 달력 */
+  .calendar-toolbar{
+    margin:0 0 10px 0!important;
+  }
+
+  .week{
+    margin:0!important;
+  }
+
+  .calendar-grid{
+    margin:0!important;
+  }
+
+  .day-head{
+    margin-top:12px!important;
+    margin-bottom:0!important;
+  }
+
+  #dayEvents{
+    margin-top:8px!important;
+  }
+
+  /* 팝업 내부 - 세로 리듬 통일 */
+  .editor-modal{
+    padding:16px!important;
+  }
+
+  .editor-modal form{
+    margin-top:0!important;
+    padding-top:0!important;
+  }
+
+  .modal-head{
+    margin:0 0 14px 0!important;
+    padding:12px 0 12px 0!important;
+  }
+
+  .editor-modal label{
+    margin:12px 0 0 0!important;
+    padding:0!important;
+  }
+
+  .editor-modal label:first-of-type{
+    margin-top:0!important;
+  }
+
+  .editor-modal input,
+  .editor-modal select,
+  .editor-modal textarea{
+    margin-top:6px!important;
+    margin-bottom:0!important;
+  }
+
+  .two-col{
+    gap:0!important;
+    margin:0!important;
+  }
+
+  .modal-actions{
+    margin-top:16px!important;
+    padding-top:12px!important;
+    gap:8px!important;
+  }
+
+  /* 팝업 안 불필요한 여백 제거 */
+  .editor-modal br{display:none!important}
+
+  /* 토스트 */
+  .toast{
+    max-width:calc(100vw - 28px)!important;
+    text-align:center!important;
+    line-height:1.45!important;
+  }
+}
+
+/* 390px 이하 작은 폰 */
+@media(max-width:390px){
+  .section,
+  .panel{
+    padding:16px 10px!important;
+  }
+  .editor-modal{
+    padding:14px!important;
+  }
+  .modal-head{
+    margin-bottom:12px!important;
+  }
+}
