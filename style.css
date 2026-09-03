@@ -1708,3 +1708,7 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
     font-size:13.5px !important;
   }
 }
+
+/* v6.0.7 - 월 전체 일정 / 선택 날짜 일정 전환 */
+.day-head-actions{display:flex;align-items:center;gap:7px}.day-head-actions>b{height:26px;padding:6px 8px;border-radius:999px;background:#edf8f4;color:#4a8d78;font-size:9px}.month-overview-btn{height:28px;padding:0 9px;border:1px solid #cfe3dd;border-radius:9px;background:#f7fbfa;color:#4a8d78;font-size:9px;font-weight:800;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .15s ease}.month-overview-btn:hover{background:#edf8f4;border-color:#9dcebf;transform:translateY(-1px)}.month-overview-btn:focus-visible{outline:2px solid #72c7ae;outline-offset:2px}.day-event time{align-content:center;gap:1px;padding:4px 2px}.day-event time b{display:block;font-size:9px;line-height:1.1}.day-event time small{display:block;margin:0;font-size:7px;line-height:1.15;color:inherit;opacity:.82}.day.selected:hover{background:#e5f3fb}
+@media(max-width:820px){.day-head-actions{gap:5px}.month-overview-btn{height:30px;padding:0 8px;font-size:9px}.day-event time b{font-size:9px}.day-event time small{font-size:7px}}

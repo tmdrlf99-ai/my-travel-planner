@@ -705,15 +705,44 @@ function renderCalendar(){
    html+=`<button class="${cls}" data-date="${k}" title="${holiday||""}"><span>${d.getDate()}</span>${holiday?`<small class="holiday-name">${esc(holiday)}</small>`:""}</button>`;
  }
  calendarGrid.innerHTML=html;
- $$(".day").forEach(b=>b.onclick=()=>{selectedDate=b.dataset.date;renderCalendar();renderDay()});
+ $$(".day").forEach(b=>b.onclick=()=>{selectedDate=selectedDate===b.dataset.date?"":b.dataset.date;renderCalendar()});
  renderDay();
 }
+function shortCalendarDate(iso){
+ if(!iso)return "";
+ const parts=iso.split("-");
+ return `${Number(parts[1])}.${Number(parts[2])}`;
+}
+function calendarRangeLabel(start,end){
+ if(!start)return "";
+ const e=end||start;
+ return start===e?shortCalendarDate(start):`${shortCalendarDate(start)}~${shortCalendarDate(e)}`;
+}
+function overlapsRange(start,end,from,to){
+ if(!start)return false;
+ const e=end||start;
+ return start<=to&&e>=from;
+}
 function renderDay(){
- const list=[...events.filter(x=>x.event_date===selectedDate).map(x=>({id:x.id,kind:"event",type:x.category||"일정",title:x.title,sub:x.description||"",author:x.author_name||""})),
- ...trips.filter(x=>tripOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"trip",type:x.start_date===selectedDate?"출발":x.end_date===selectedDate?"종료":"여행중",title:x.title,sub:x.city||x.country||x.region||"",author:x.author_name||""})),
- ...places.filter(x=>placeOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"place",type:x.status==="버킷리스트"?"방문계획":"방문지",title:x.place_type==="국내"?domesticPlaceText(x):x.place_name,sub:x.memo||x.place_type||"",author:x.author_name||""}))];
- dayTitle.textContent=selectedDate?`${Number(selectedDate.slice(5,7))}월 ${Number(selectedDate.slice(8,10))}일 일정`:"선택 날짜 일정";dayCount.textContent=`${list.length}건`;
- dayEvents.innerHTML=list.length?list.map(x=>`<div class="day-event" data-kind="${x.kind}" data-id="${x.id}"><time>${esc(x.type)}</time><div><strong>${esc(x.title)}</strong><small>${esc(x.sub)}${x.author?` · 작성 ${esc(x.author)}`:""}</small></div></div>`).join(""):'<div class="empty">날짜를 선택하면 해당 일정이 표시됩니다.</div>';
+ let list=[];
+ if(selectedDate){
+  list=[...events.filter(x=>x.event_date===selectedDate).map(x=>({id:x.id,kind:"event",badge:x.category||"일정",dateLabel:shortCalendarDate(x.event_date),title:x.title,sub:x.description||"",author:x.author_name||"",sortKey:x.event_date})),
+   ...trips.filter(x=>tripOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"trip",badge:x.start_date===selectedDate?"출발":x.end_date===selectedDate?"종료":"여행중",dateLabel:shortCalendarDate(selectedDate),title:x.title,sub:x.city||x.country||x.region||"",author:x.author_name||"",sortKey:x.start_date||selectedDate})),
+   ...places.filter(x=>placeOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"place",badge:x.status==="버킷리스트"?"방문계획":"방문지",dateLabel:shortCalendarDate(selectedDate),title:x.place_type==="국내"?domesticPlaceText(x):x.place_name,sub:x.memo||x.place_type||"",author:x.author_name||"",sortKey:x.start_date||selectedDate}))];
+  dayTitle.textContent=`${Number(selectedDate.slice(5,7))}월 ${Number(selectedDate.slice(8,10))}일 일정`;
+  if(typeof monthOverviewBtn!=="undefined"&&monthOverviewBtn)monthOverviewBtn.hidden=false;
+ }else{
+  const y=cal.getFullYear(),m=cal.getMonth();
+  const from=fmt(new Date(y,m,1)),to=fmt(new Date(y,m+1,0));
+  list=[...events.filter(x=>x.event_date>=from&&x.event_date<=to).map(x=>({id:x.id,kind:"event",badge:x.category||"일정",dateLabel:shortCalendarDate(x.event_date),title:x.title,sub:x.description||"",author:x.author_name||"",sortKey:x.event_date})),
+   ...trips.filter(x=>overlapsRange(x.start_date,x.end_date,from,to)).map(x=>({id:x.id,kind:"trip",badge:"여행",dateLabel:calendarRangeLabel(x.start_date,x.end_date),title:x.title,sub:x.city||x.country||x.region||"",author:x.author_name||"",sortKey:x.start_date||from})),
+   ...places.filter(x=>overlapsRange(x.start_date,x.end_date,from,to)).map(x=>({id:x.id,kind:"place",badge:x.status==="버킷리스트"?"방문계획":"방문지",dateLabel:calendarRangeLabel(x.start_date,x.end_date),title:x.place_type==="국내"?domesticPlaceText(x):x.place_name,sub:x.memo||x.place_type||"",author:x.author_name||"",sortKey:x.start_date||from}))];
+  dayTitle.textContent=`${m+1}월 전체 일정`;
+  if(typeof monthOverviewBtn!=="undefined"&&monthOverviewBtn)monthOverviewBtn.hidden=true;
+ }
+ list.sort((a,b)=>(a.sortKey||"").localeCompare(b.sortKey||"")||a.title.localeCompare(b.title,"ko"));
+ dayCount.textContent=`${list.length}건`;
+ dayEvents.innerHTML=list.length?list.map(x=>`<div class="day-event" data-kind="${x.kind}" data-id="${x.id}"><time title="${esc(x.badge)}"><b>${esc(x.dateLabel)}</b><small>${esc(x.badge)}</small></time><div><strong>${esc(x.title)}</strong><small>${esc(x.sub)}${x.author?` · 작성 ${esc(x.author)}`:""}</small></div></div>`).join(""):`<div class="empty">${selectedDate?"선택한 날짜에 등록된 일정이 없습니다.":"이 달에 등록된 여행 일정이 없습니다."}</div>`;
  $$("#dayEvents .day-event").forEach(el=>el.onclick=()=>{
   const id=Number(el.dataset.id);
   if(el.dataset.kind==="event")editEvent(id);
@@ -721,7 +750,10 @@ function renderDay(){
   else editTrip(id);
  });
 }
-prevMonth.onclick=()=>{cal.setMonth(cal.getMonth()-1);renderCalendar()};nextMonth.onclick=()=>{cal.setMonth(cal.getMonth()+1);renderCalendar()};todayMonth.onclick=()=>{cal=new Date();renderCalendar()};
+prevMonth.onclick=()=>{selectedDate="";cal.setMonth(cal.getMonth()-1);renderCalendar()};
+nextMonth.onclick=()=>{selectedDate="";cal.setMonth(cal.getMonth()+1);renderCalendar()};
+todayMonth.onclick=()=>{selectedDate="";cal=new Date();renderCalendar()};
+if(typeof monthOverviewBtn!=="undefined"&&monthOverviewBtn)monthOverviewBtn.onclick=()=>{selectedDate="";renderCalendar()};
 function ensureKoreaMap(){
  if(koreaMap || typeof maplibregl==="undefined") return;
  koreaMap=new maplibregl.Map({
