@@ -272,6 +272,21 @@ const overseasPlaceText=x=>{
  return country||cities.join(" · ")||"";
 };
 
+// 목록은 등록순이 아니라 실제 여행/방문 날짜 기준으로 표시합니다.
+const relevantDate=x=>String(x?.start_date||x?.event_date||x?.created_at||"").slice(0,10);
+const chronological=(a,b)=>{
+ const ad=relevantDate(a),bd=relevantDate(b);
+ if(ad&&bd&&ad!==bd)return ad.localeCompare(bd);
+ if(ad&&!bd)return -1;
+ if(!ad&&bd)return 1;
+ const an=String(a?.title||a?.place_name||a?.category||"");
+ const bn=String(b?.title||b?.place_name||b?.category||"");
+ return an.localeCompare(bn,"ko")||Number(a?.id||0)-Number(b?.id||0);
+};
+const tripLocationParts=x=>x.trip_type==="국내"
+ ? {top:regionLabel(normalizeRegionKey(x.region))||"-",bottom:String(x.city||"").trim()||"-"}
+ : {top:String(x.country||"-").trim()||"-",bottom:String(x.city||"").trim()||"-"};
+
 const KR_LUNAR_HOLIDAY_DATES={
  2026:["2026-02-17","2026-05-24","2026-09-25"],
  2027:["2027-02-07","2027-05-13","2027-09-15"],
@@ -543,8 +558,8 @@ function showKoreaMunicipality(region,city){
    const rowCities=placeCities(x);
    const legacyCity=(!rowCities.length&&x.region_name&&x.place_name!==x.region_name)?String(x.place_name||'').trim():'';
    return rowRegion===selectedKoreaRegion&&(rowCities.includes(selectedKoreaCity)||legacyCity===selectedKoreaCity);
- });
- const tripRows=trips.filter(x=>x.trip_type==='국내'&&normalizeRegionKey(x.region)===selectedKoreaRegion&&String(x.city||'').trim()===selectedKoreaCity).sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
+ }).sort(chronological);
+ const tripRows=trips.filter(x=>x.trip_type==='국내'&&normalizeRegionKey(x.region)===selectedKoreaRegion&&String(x.city||'').trim()===selectedKoreaCity).sort(chronological);
  const st=domesticMunicipalityStatus(selectedKoreaRegion,selectedKoreaCity);
  const label=st==='visited'?'방문 지역':st==='bucket'?'버킷리스트 지역':'미등록 지역';
  koreaRegion.textContent=`${regionLabel(selectedKoreaRegion)} · ${selectedKoreaCity}`;
@@ -558,8 +573,8 @@ function showKoreaMunicipality(region,city){
 function showWorldCountry(geoName){
  selectedWorldGeoName=normalizeWorldGeoName(geoName);updateWorldCountrySource();
  const ko=worldKoreanName(selectedWorldGeoName);
- const placeRows=places.filter(x=>x.place_type==='해외'&&worldGeoNameForPlace(x.place_name)===selectedWorldGeoName);
- const tripRows=trips.filter(x=>x.trip_type==='해외'&&worldGeoNameForPlace(x.country)===selectedWorldGeoName).sort((a,b)=>(b.start_date||'').localeCompare(a.start_date||''));
+ const placeRows=places.filter(x=>x.place_type==='해외'&&worldGeoNameForPlace(x.place_name)===selectedWorldGeoName).sort(chronological);
+ const tripRows=trips.filter(x=>x.trip_type==='해외'&&worldGeoNameForPlace(x.country)===selectedWorldGeoName).sort(chronological);
  const status=worldCountryStatus(selectedWorldGeoName);
  const recordedCities=[...new Set([...placeRows.flatMap(placeCities),...tripRows.map(x=>String(x.city||'').trim()).filter(Boolean)])];
  worldCountry.textContent=ko;
@@ -928,7 +943,7 @@ function renderPlaces(){
  domesticVisitedCount.textContent=dv;domesticBucketCount.textContent=db;overseasVisitedCount.textContent=ov;overseasBucketCount.textContent=ob;
 
  const q=placeSearch.value.trim().toLowerCase(),type=placeTypeFilter.value,status=placeStatusFilter.value;
- const rows=places.filter(x=>(!type||x.place_type===type)&&(!status||x.status===status)&&(`${x.place_name} ${x.region_name||""} ${placeCities(x).join(" ")} ${x.memo||""} ${x.author_name||""}`.toLowerCase().includes(q)));
+ const rows=places.filter(x=>(!type||x.place_type===type)&&(!status||x.status===status)&&(`${x.place_name} ${x.region_name||""} ${placeCities(x).join(" ")} ${x.memo||""} ${x.author_name||""}`.toLowerCase().includes(q))).sort(chronological);
  placeList.innerHTML=rows.length?rows.map(x=>`<div class="place-row" data-place="${x.id}">
    <span>${esc(x.place_type)}</span>
    <span class="place-status ${x.status==="방문"?"visited":"bucket"}">${esc(x.status)}</span>
@@ -1007,20 +1022,25 @@ openPlaceCreate.onclick=newPlace;
 
 function renderBoard(){
  const q=boardSearch.value.toLowerCase(),type=boardType.value,status=boardStatus.value;
- const list=trips.filter(x=>(!type||x.trip_type===type)&&(!status||x.status===status)&&(`${x.title} ${x.city||""} ${x.country||""} ${x.region||""}`.toLowerCase().includes(q)));
- tripBoard.innerHTML=list.length?list.map(x=>`<div class="board-row" data-trip="${x.id}"><span>${esc(x.trip_type)}</span><span>${esc(x.trip_type==="국내"?(regionLabel(normalizeRegionKey(x.region))+(x.city?` · ${x.city}`:"")):((x.country||"-")+(x.city?` · ${x.city}`:"")))}</span><b>${esc(x.title)}${x.author_name?` <small class="author-note">by ${esc(x.author_name)}</small>`:""}</b><time>${x.start_date||""}${x.end_date?` ~ ${x.end_date}`:""}</time><span class="status-chip ${x.status==="버킷리스트"?"bucket":x.status==="완료"?"done":""}">${esc(x.status||"예정")}</span></div>`).join(""):'<div class="empty-mini">조건에 맞는 여행이 없습니다.</div>';
+ const list=trips
+   .filter(x=>(!type||x.trip_type===type)&&(!status||x.status===status)&&(`${x.title} ${x.city||""} ${x.country||""} ${x.region||""}`.toLowerCase().includes(q)))
+   .sort(chronological);
+ tripBoard.innerHTML=list.length?list.map(x=>{
+   const loc=tripLocationParts(x);
+   return `<div class="board-row" data-trip="${x.id}"><span>${esc(x.trip_type)}</span><div class="board-location"><strong>${esc(loc.top)}</strong><small>${esc(loc.bottom)}</small></div><b>${esc(x.title)}${x.author_name?` <small class="author-note">by ${esc(x.author_name)}</small>`:""}</b><time>${x.start_date||""}${x.end_date?` ~ ${x.end_date}`:""}</time><span class="status-chip ${x.status==="버킷리스트"?"bucket":x.status==="완료"?"done":""}">${esc(x.status||"예정")}</span></div>`;
+ }).join(""):'<div class="empty-mini">조건에 맞는 여행이 없습니다.</div>';
  $$("#tripBoard [data-trip]").forEach(el=>el.onclick=()=>editTrip(Number(el.dataset.trip)));
 }
 boardSearch.oninput=renderBoard;boardType.onchange=renderBoard;boardStatus.onchange=renderBoard;
-function renderBudgetOptions(){const options=trips.map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join("");budgetTripSelect.innerHTML=`<option value="">전체 여행</option>${options}`;if(selectedBudgetTrip)budgetTripSelect.value=selectedBudgetTrip}
+function renderBudgetOptions(){const options=[...trips].sort(chronological).map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join("");budgetTripSelect.innerHTML=`<option value="">전체 여행</option>${options}`;if(selectedBudgetTrip)budgetTripSelect.value=selectedBudgetTrip}
 function renderBudget(){
- const id=budgetTripSelect.value;selectedBudgetTrip=id;const list=budgets.filter(x=>!id||String(x.trip_id)===String(id)),total=list.reduce((s,x)=>s+Number(x.budget_amount||0),0),spent=list.reduce((s,x)=>s+Number(x.spent_amount||0),0),remain=total-spent,rate=total?Math.round(spent/total*100):0;
+ const id=budgetTripSelect.value;selectedBudgetTrip=id;const list=budgets.filter(x=>!id||String(x.trip_id)===String(id)).sort((a,b)=>{const ta=trips.find(t=>String(t.id)===String(a.trip_id)),tb=trips.find(t=>String(t.id)===String(b.trip_id));return chronological(ta||a,tb||b)||Number(a.sort_order||0)-Number(b.sort_order||0)}),total=list.reduce((s,x)=>s+Number(x.budget_amount||0),0),spent=list.reduce((s,x)=>s+Number(x.spent_amount||0),0),remain=total-spent,rate=total?Math.round(spent/total*100):0;
  budgetTotal.textContent=money(total);budgetSpent.textContent=money(spent);budgetRemain.textContent=money(remain);budgetRate.textContent=rate+"%";
  budgetTable.innerHTML=`<div class="budget-row head"><span>항목</span><span>예산</span><span>지출</span><span>잔액</span></div>`+(list.length?list.map(x=>`<div class="budget-row" data-budget="${x.id}"><b>${esc(x.category)}${x.author_name?` <small class="author-note">by ${esc(x.author_name)}</small>`:""}</b><span>${money(x.budget_amount)}</span><span>${money(x.spent_amount)}</span><span>${money(Number(x.budget_amount)-Number(x.spent_amount))}</span></div>`).join(""):'<div class="empty-mini">등록된 예산이 없습니다.</div>');
  $$("#budgetTable [data-budget]").forEach(el=>el.onclick=()=>editBudget(Number(el.dataset.budget)));
 }
 budgetTripSelect.onchange=renderBudget;
-function fillEditTripSelects(){const o='<option value="">미지정</option>'+trips.map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join("");eventTripEdit.innerHTML=o;budgetTripEdit.innerHTML=o}
+function fillEditTripSelects(){const o='<option value="">미지정</option>'+[...trips].sort(chronological).map(x=>`<option value="${x.id}">${esc(x.title)}</option>`).join("");eventTripEdit.innerHTML=o;budgetTripEdit.innerHTML=o}
 
 /* 여행 CRUD */
 function resetTripForm(){
