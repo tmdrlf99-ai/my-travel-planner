@@ -236,16 +236,27 @@ function populateTripCities(region,current=""){
 }
 function syncTripLocationFields(region="",city="",country=""){
  const domestic=tripTypeEdit.value==="국내";
+ const locationRow=tripRegionWrap.parentElement;
  tripRegionWrap.hidden=!domestic;
  tripCityWrap.hidden=false;
  tripRegionEdit.required=domestic;
  if(domestic){
+   // 국내: 시·도 → 도시 → 국가(대한민국) 순서를 유지합니다.
+   if(locationRow&&tripCountryWrap&&locationRow.parentElement===tripCountryWrap.parentElement){
+     locationRow.parentElement.insertBefore(locationRow,tripCountryWrap);
+     locationRow.style.gridTemplateColumns="";
+   }
    populateTripRegions(region);
    tripCountryEdit.innerHTML='<option value="대한민국">대한민국</option>';
    tripCountryEdit.value="대한민국";
    tripCountryEdit.disabled=true;
    populateTripCities(tripRegionEdit.value,city);
  }else{
+   // 해외: 국가를 먼저 고른 뒤 해당 국가의 도시·지역을 선택하도록 순서를 바꿉니다.
+   if(locationRow&&tripCountryWrap&&locationRow.parentElement===tripCountryWrap.parentElement){
+     locationRow.parentElement.insertBefore(tripCountryWrap,locationRow);
+     locationRow.style.gridTemplateColumns="1fr";
+   }
    tripRegionEdit.required=false;
    tripRegionEdit.innerHTML="";
    tripCountryEdit.disabled=false;
@@ -643,6 +654,16 @@ function openModal(id){$("#editorBackdrop").hidden=false;$("#"+id).hidden=false}
 function closeModal(id){$("#"+id).hidden=true;if($$(".editor-modal:not([hidden])").length===0)$("#editorBackdrop").hidden=true}
 $$("[data-close]").forEach(b=>b.addEventListener("click",()=>closeModal(b.dataset.close)));
 $("#editorBackdrop").addEventListener("click",()=>{$$(".editor-modal").forEach(m=>m.hidden=true);$("#editorBackdrop").hidden=true});
+
+// 모든 편집 팝업은 ESC 키로 닫을 수 있습니다.
+document.addEventListener("keydown",event=>{
+ if(event.key!=="Escape")return;
+ const openModals=$$(".editor-modal:not([hidden])");
+ if(!openModals.length)return;
+ event.preventDefault();
+ const topModal=openModals[openModals.length-1];
+ closeModal(topModal.id);
+});
 
 async function loadAll(){
  const localTrips=localRead("trips"),localEvents=localRead("events"),localBudgets=localRead("budgets"),localPlaces=localRead("places");
