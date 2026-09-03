@@ -2,8 +2,9 @@
 // 브라우저 -> /api/travel-data -> Supabase
 // 회사망에서 *.supabase.co 직접 접속이 막혀도 Vercel 경유로 동기화합니다.
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "https://cqlcdexesxujklpwnvyy.supabase.co";
-const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_7RaNiiyEa6XuDZzAgyO5Jg_uDI-l5hj";
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  "https://cqlcdexexsujklpwnyvy.supabase.co";const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_7RaNiiyEa6XuDZzAgyO5Jg_uDI-l5hj";
 const ALLOWED = new Set(["travel_trips","travel_events","travel_budgets","travel_places"]);
 const READ_QUERY = {
   travel_trips: "select=*&is_visible=eq.true&order=start_date.asc.nullslast",
