@@ -810,6 +810,61 @@ function calendarLocationLabels(k){
  });
  return labels;
 }
+function calendarHoverItems(k){
+ const rows=[];
+ const seen=new Set();
+ const add=(key,item)=>{if(!seen.has(key)){seen.add(key);rows.push(item)}};
+ trips.filter(x=>tripOnDate(x,k)).forEach(x=>add(`trip-${x.id}`,{
+  location:compactTripLocation(x),
+  title:x.title||"여행",
+  meta:`여행 · ${calendarRangeLabel(x.start_date,x.end_date)}`
+ }));
+ places.filter(x=>placeOnDate(x,k)).forEach(x=>add(`place-${x.id}`,{
+  location:compactPlaceLocation(x),
+  title:x.memo||((x.place_type==="국내"?domesticPlaceText(x):x.place_name)||"방문지"),
+  meta:`${x.status||"방문지"} · ${calendarRangeLabel(x.start_date,x.end_date)}`
+ }));
+ events.filter(x=>x.event_date===k).forEach(x=>{
+  const trip=x.trip_id?trips.find(t=>String(t.id)===String(x.trip_id)):null;
+  add(`event-${x.id}`,{
+   location:trip?compactTripLocation(trip):"",
+   title:x.title||"일정",
+   meta:`${x.category||"일정"} · ${shortCalendarDate(x.event_date)}`
+  });
+ });
+ return rows;
+}
+let calendarHoverTooltip=null;
+function ensureCalendarHoverTooltip(){
+ if(calendarHoverTooltip&&document.body.contains(calendarHoverTooltip))return calendarHoverTooltip;
+ calendarHoverTooltip=document.createElement("div");
+ calendarHoverTooltip.className="calendar-hover-tooltip";
+ calendarHoverTooltip.setAttribute("role","tooltip");
+ calendarHoverTooltip.hidden=true;
+ document.body.appendChild(calendarHoverTooltip);
+ return calendarHoverTooltip;
+}
+function hideCalendarHoverTooltip(){
+ if(calendarHoverTooltip)calendarHoverTooltip.hidden=true;
+}
+function showCalendarHoverTooltip(button,k){
+ if(!window.matchMedia("(hover: hover) and (pointer: fine)").matches)return;
+ const items=calendarHoverItems(k);
+ if(!items.length){hideCalendarHoverTooltip();return}
+ const tip=ensureCalendarHoverTooltip();
+ const visible=items.slice(0,4);
+ tip.innerHTML=`<strong>${Number(k.slice(5,7))}월 ${Number(k.slice(8,10))}일</strong><div class="calendar-hover-list">${visible.map(item=>`<div class="calendar-hover-item">${item.location?`<b>${esc(item.location)}</b>`:""}<span>${esc(item.title)}</span><small>${esc(item.meta)}</small></div>`).join("")}</div>${items.length>4?`<em>외 ${items.length-4}건</em>`:""}`;
+ tip.hidden=false;
+ tip.style.left="0px";tip.style.top="0px";
+ const r=button.getBoundingClientRect(),tr=tip.getBoundingClientRect();
+ const gap=8,pad=8;
+ let left=r.left+r.width/2-tr.width/2;
+ left=Math.max(pad,Math.min(left,window.innerWidth-tr.width-pad));
+ let top=r.top-tr.height-gap;
+ if(top<pad)top=r.bottom+gap;
+ top=Math.max(pad,Math.min(top,window.innerHeight-tr.height-pad));
+ tip.style.left=`${Math.round(left)}px`;tip.style.top=`${Math.round(top)}px`;
+}
 function renderCalendar(){
  const y=cal.getFullYear(),m=cal.getMonth();monthTitle.textContent=`${y}년 ${m+1}월`;
  const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay()),today=fmt(new Date());
@@ -835,9 +890,17 @@ function renderCalendar(){
    html+=`<button class="${cls}" data-date="${k}" title="${esc(dayTitleText)}"><span>${d.getDate()}</span>${holiday?`<small class="holiday-name">${esc(holiday)}</small>`:""}${primaryLocation?`<small class="day-location">${esc(primaryLocation)}${moreLocations?` <b>+${moreLocations}</b>`:""}</small>`:""}</button>`;
  }
  calendarGrid.innerHTML=html;
- $$(".day").forEach(b=>b.onclick=()=>{selectedDate=selectedDate===b.dataset.date?"":b.dataset.date;renderCalendar()});
+ $$(".day").forEach(b=>{
+  b.onclick=()=>{hideCalendarHoverTooltip();selectedDate=selectedDate===b.dataset.date?"":b.dataset.date;renderCalendar()};
+  b.addEventListener("mouseenter",()=>showCalendarHoverTooltip(b,b.dataset.date));
+  b.addEventListener("mouseleave",hideCalendarHoverTooltip);
+  b.addEventListener("focus",()=>showCalendarHoverTooltip(b,b.dataset.date));
+  b.addEventListener("blur",hideCalendarHoverTooltip);
+ });
  renderDay();
 }
+window.addEventListener("scroll",hideCalendarHoverTooltip,{passive:true});
+window.addEventListener("resize",hideCalendarHoverTooltip);
 function shortCalendarDate(iso){
  if(!iso)return "";
  const parts=iso.split("-");
