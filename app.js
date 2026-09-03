@@ -1006,34 +1006,73 @@ deleteBudgetBtn.onclick=async()=>{
 
 openTripCreate.onclick=newTrip;openTripCreate2.onclick=newTrip;openEventCreate.onclick=newEvent;openBudgetCreate.onclick=newBudget;
 const NAV_IDS=["home","calendar","korea","world","places","board","budget"];
+let __activeNavId="home";
+let __lastNavScrollY=window.scrollY;
+let __navManualLockUntil=0;
 function setActiveNav(id){
- $$(".nav a").forEach(a=>a.classList.toggle("active",a.dataset.target===id));
+ __activeNavId=id||__activeNavId;
+ $$(".nav a").forEach(a=>a.classList.toggle("active",a.dataset.target===__activeNavId));
 }
 function updateActiveNav(){
- const doc=document.documentElement;
- const atBottom=(window.scrollY+window.innerHeight)>=doc.scrollHeight-24;
- if(atBottom){setActiveNav("budget");return;}
- // 화면 상단의 고정 헤더 바로 아래 기준선을 사용합니다.
- // 다음 섹션이 화면 중앙에 들어오기 전부터 활성화되는 기존 방식 때문에
- // 짧은 '지역별 일정' 구간이 건너뛰어 보이던 문제를 방지합니다.
- const anchor=window.innerWidth<=820?88:110;
- let cur="home";
- for(const id of NAV_IDS){
-  const el=document.getElementById(id);if(!el)continue;
-  if(el.getBoundingClientRect().top<=anchor) cur=id;
+ if(Date.now()<__navManualLockUntil){__lastNavScrollY=Math.max(0,window.scrollY);return;}
+ const y=Math.max(0,window.scrollY);
+ const scrollingUp=y<__lastNavScrollY-2;
+ const scrollingDown=y>__lastNavScrollY+2;
+ __lastNavScrollY=y;
+ const currentIndex=Math.max(0,NAV_IDS.indexOf(__activeNavId));
+ const desktop=window.innerWidth>820;
+ // 내려갈 때는 화면 상단에서 약간 여유를 둔 지점에서 다음 메뉴로 전환합니다.
+ // 올라갈 때는 현재 섹션이 화면의 절반 가까이 아래로 내려온 뒤에야 이전 메뉴로 바꿔
+ // 왼쪽 위치 표시가 너무 성급하게 위로 이동하지 않도록 히스테리시스를 둡니다.
+ const downAnchor=desktop?150:96;
+ const upAnchor=desktop?Math.min(430,window.innerHeight*0.48):Math.min(300,window.innerHeight*0.42);
+
+ if(scrollingUp&&currentIndex>0){
+  const currentEl=document.getElementById(NAV_IDS[currentIndex]);
+  if(currentEl&&currentEl.getBoundingClientRect().top>upAnchor){
+   // 한 번에 여러 메뉴를 건너뛰지 않고 직전 섹션으로만 이동합니다.
+   setActiveNav(NAV_IDS[currentIndex-1]);
+  }
+  return;
+ }
+
+ if(scrollingDown||!document.querySelector('.nav a.active')){
+  let candidate=0;
+  for(let i=0;i<NAV_IDS.length;i++){
+   const el=document.getElementById(NAV_IDS[i]);if(!el)continue;
+   if(el.getBoundingClientRect().top<=downAnchor) candidate=i;
+   else break;
+  }
+  // 아래로 갈 때는 활성 메뉴가 뒤로 되돌아가지 않게 하고,
+  // '지역별 일정' 같은 짧은 섹션도 한 단계씩 반드시 거쳐갑니다.
+  if(candidate>currentIndex){
+   const nextIndex=Math.min(candidate,currentIndex+1);
+   setActiveNav(NAV_IDS[nextIndex]);
+  }
+  return;
+ }
+
+ // 리사이즈·초기 로드 등 스크롤 방향이 없는 경우 현재 화면 기준으로 보정합니다.
+ let candidate=0;
+ for(let i=0;i<NAV_IDS.length;i++){
+  const el=document.getElementById(NAV_IDS[i]);if(!el)continue;
+  if(el.getBoundingClientRect().top<=downAnchor) candidate=i;
   else break;
  }
- setActiveNav(cur);
+ setActiveNav(NAV_IDS[candidate]);
 }
 $$(".nav a,.quick-grid a").forEach(a=>a.onclick=e=>{
  const id=(a.dataset.target||a.getAttribute("href")?.replace("#",""));
  if(id&&document.getElementById(id)){
-  e.preventDefault();setActiveNav(id);document.getElementById(id).scrollIntoView({behavior:"smooth",block:"start"});
+  e.preventDefault();
+  __navManualLockUntil=Date.now()+900;
+  setActiveNav(id);
+  document.getElementById(id).scrollIntoView({behavior:"smooth",block:"start"});
  }
 });
 function runGlobalSearch(){
  const q=globalSearch.value.trim().toLowerCase();if(!q){globalSearch.focus();return;}
- boardSearch.value=q;renderBoard();setActiveNav("board");document.getElementById("board").scrollIntoView({behavior:"smooth"});
+ boardSearch.value=q;renderBoard();__navManualLockUntil=Date.now()+900;setActiveNav("board");document.getElementById("board").scrollIntoView({behavior:"smooth"});
 }
 globalSearchBtn.onclick=runGlobalSearch;
 globalSearch.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();runGlobalSearch()}});

@@ -1690,3 +1690,21 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
 .editor-modal .multi-city-option input{appearance:auto;width:auto!important;margin:0!important;padding:0!important;accent-color:#59ad94}
 .multi-city-help{display:block;margin-top:6px;color:#8a9aa2;font-size:10px;font-weight:500}
 @media(max-width:720px){.multi-city-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:220px}.multi-city-label-row{align-items:flex-start;flex-direction:column}.multi-city-actions{width:100%}.mini-text-btn{flex:1}}
+
+
+/* ===== v6.0.4 SCROLL SPY / SIDEBAR HEADING FIX ===== */
+@media(min-width:721px){
+  /* 메뉴 제목이 하위 메뉴보다 작아 보이지 않도록 한 단계 크게 조정 */
+  .side-caption{
+    font-size:14px !important;
+    line-height:1.25 !important;
+    font-weight:900 !important;
+    letter-spacing:.02em !important;
+    color:#536f7d !important;
+    margin-top:19px !important;
+    margin-bottom:9px !important;
+  }
+  .nav a{
+    font-size:13.5px !important;
+  }
+}
