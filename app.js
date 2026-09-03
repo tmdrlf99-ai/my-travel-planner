@@ -172,6 +172,24 @@ const WORLD_COUNTRY_CITIES={
  "아르헨티나":["부에노스아이레스","엘칼라파테","우수아이아","멘도사","바릴로체"]
 };
 
+
+// 해외지도에서 국가 전체가 아니라 실제 등록 도시를 표시하기 위한 좌표입니다.
+const WORLD_CITY_COORDS={
+ "일본|도쿄도":[35.6762,139.6503],"일본|도쿄":[35.6762,139.6503],
+ "일본|오사카시":[34.6937,135.5023],"일본|오사카":[34.6937,135.5023],
+ "일본|교토시":[35.0116,135.7681],"일본|교토":[35.0116,135.7681],
+ "일본|삿포로시":[43.0618,141.3545],"일본|삿포로":[43.0618,141.3545],
+ "일본|후쿠오카시":[33.5902,130.4017],"일본|후쿠오카":[33.5902,130.4017],
+ "일본|나고야시":[35.1815,136.9066],"일본|나고야":[35.1815,136.9066],
+ "일본|요코하마시":[35.4437,139.6380],"일본|요코하마":[35.4437,139.6380],
+ "일본|고베시":[34.6901,135.1955],"일본|고베":[34.6901,135.1955],
+ "일본|나라시":[34.6851,135.8048],"일본|나라":[34.6851,135.8048],
+ "일본|나하시(오키나와)":[26.2124,127.6809],"일본|나하":[26.2124,127.6809],"일본|오키나와":[26.2124,127.6809]
+};
+function worldCityCoord(country,city){
+ return WORLD_CITY_COORDS[`${String(country||'').trim()}|${String(city||'').trim()}`]||null;
+}
+
 const KR_REGION_CITIES={
  "서울":["종로구","중구","용산구","성동구","광진구","동대문구","중랑구","성북구","강북구","도봉구","노원구","은평구","서대문구","마포구","양천구","강서구","구로구","금천구","영등포구","동작구","관악구","서초구","강남구","송파구","강동구"],
  "부산":["중구","서구","동구","영도구","부산진구","동래구","남구","북구","해운대구","사하구","금정구","강서구","연제구","수영구","사상구","기장군"],
@@ -524,11 +542,14 @@ function normalizeWorldGeoName(name){return WORLD_GEO_ALIASES[name]||name||''}
 function worldKoreanName(geoName){const n=normalizeWorldGeoName(geoName);return WORLD_KO_BY_GEO_NAME[n]||n}
 function worldGeoNameForPlace(name){return normalizeWorldGeoName(WORLD_GEO_NAME_BY_KO[name]||name||'')}
 function worldCountryStatus(geoName){
- const n=normalizeWorldGeoName(geoName),ko=worldKoreanName(n);
- const rows=places.filter(x=>x.place_type==='해외'&&worldGeoNameForPlace(x.place_name)===n);
- if(rows.some(x=>x.status==='방문'))return 'visited';
- if(rows.some(x=>x.status==='버킷리스트'))return 'bucket';
- if(trips.some(x=>x.trip_type==='해외'&&worldGeoNameForPlace(x.country)===n&&x.status==='완료'))return 'visited';
+ const n=normalizeWorldGeoName(geoName);
+ // 도시/지역이 지정된 기록은 국가 전체 방문으로 보지 않습니다.
+ const countryOnlyPlaces=places.filter(x=>x.place_type==='해외'&&worldGeoNameForPlace(x.place_name)===n&&!placeCities(x).length);
+ if(countryOnlyPlaces.some(x=>x.status==='방문'))return 'visited';
+ if(countryOnlyPlaces.some(x=>x.status==='버킷리스트'))return 'bucket';
+ const countryOnlyTrips=trips.filter(x=>x.trip_type==='해외'&&worldGeoNameForPlace(x.country)===n&&!String(x.city||'').trim());
+ if(countryOnlyTrips.some(x=>x.status==='완료'))return 'visited';
+ if(countryOnlyTrips.some(x=>x.status==='버킷리스트'))return 'bucket';
  return 'none';
 }
 function decorateWorldGeoJSON(){
@@ -589,12 +610,15 @@ function showWorldCountry(geoName){
  const status=worldCountryStatus(selectedWorldGeoName);
  const recordedCities=[...new Set([...placeRows.flatMap(placeCities),...tripRows.map(x=>String(x.city||'').trim()).filter(Boolean)])];
  worldCountry.textContent=ko;
- worldDesc.textContent=`${status==='visited'?'방문 국가':status==='bucket'?'버킷리스트 국가':'미등록 국가'} · 도시/지역 ${recordedCities.length}곳 · 여행 ${tripRows.length}건 · 방문지 기록 ${placeRows.length}건`;
  worldTripList.classList.add('map-region-list');
  const cards=[];
  const cityStatus=new Map();
  placeRows.forEach(x=>placeCities(x).forEach(city=>{const prev=cityStatus.get(city);if(x.status==='방문'||!prev)cityStatus.set(city,x.status)}));
- tripRows.forEach(x=>{const city=String(x.city||'').trim();if(city&&x.status==='완료')cityStatus.set(city,'방문')});
+ tripRows.forEach(x=>{const city=String(x.city||'').trim();if(city&&x.status==='완료')cityStatus.set(city,'방문');else if(city&&x.status==='버킷리스트'&&!cityStatus.has(city))cityStatus.set(city,'버킷리스트')});
+ const visitedCityCount=recordedCities.filter(city=>cityStatus.get(city)==='방문').length;
+ const bucketCityCount=recordedCities.filter(city=>cityStatus.get(city)==='버킷리스트').length;
+ const countrySummary=status==='visited'?'국가 전체 방문':status==='bucket'?'국가 전체 버킷리스트':visitedCityCount?`방문 도시/지역 ${visitedCityCount}곳`:bucketCityCount?`버킷리스트 도시/지역 ${bucketCityCount}곳`:'등록된 도시/지역 없음';
+ worldDesc.textContent=`${countrySummary} · 등록 도시/지역 ${recordedCities.length}곳 · 여행 ${tripRows.length}건 · 방문지 기록 ${placeRows.length}건`;
  recordedCities.forEach(city=>{const st=cityStatus.get(city)||'예정';cards.push(`<div class="map-region-item"><div><b>${esc(city)}</b><small>${esc(ko)} · 등록된 도시/지역</small></div><span class="map-list-status ${st==='방문'?'visited':st==='버킷리스트'?'bucket':'none'}">${esc(st)}</span></div>`)});
  tripRows.forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.city||x.title)}</b><small>${esc(x.title)} · ${esc(x.start_date||'')} ${x.end_date?`~ ${esc(x.end_date)}`:''}</small></div><span class="map-list-status ${x.status==='완료'?'visited':x.status==='버킷리스트'?'bucket':'none'}">${esc(x.status||'예정')}</span></div>`));
  placeRows.filter(x=>!placeCities(x).length&&!x.source_trip_id).forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.place_name)}</b><small>${esc(x.memo||'직접 등록한 방문지')}</small></div><span class="map-list-status ${x.status==='방문'?'visited':'bucket'}">${esc(x.status)}</span></div>`));
@@ -606,8 +630,9 @@ async function setupKoreaRegionLayer(){
    koreaMunicipalityBaseGeoJSON=await fetchKoreaMunicipalityGeoJSON();
    if(!koreaMap||koreaMap.getSource('travel-korea-regions'))return;
    koreaMap.addSource('travel-korea-regions',{type:'geojson',data:decorateKoreaGeoJSON()});
-   koreaMap.addLayer({id:'travel-korea-fill',type:'fill',source:'travel-korea-regions',paint:mapFillPaint()});
-   koreaMap.addLayer({id:'travel-korea-line',type:'line',source:'travel-korea-regions',paint:mapLinePaint()});
+   const beforeLabel=firstSymbolLayerId(koreaMap);
+   koreaMap.addLayer({id:'travel-korea-fill',type:'fill',source:'travel-korea-regions',paint:mapFillPaint()},beforeLabel);
+   koreaMap.addLayer({id:'travel-korea-line',type:'line',source:'travel-korea-regions',paint:mapLinePaint()},beforeLabel);
    koreaRegionLayerReady=true;clearMapMarkers(koreaMapMarkers);updateKoreaRegionSource();
    koreaMap.on('mouseenter','travel-korea-fill',()=>{koreaMap.getCanvas().style.cursor='pointer'});
    koreaMap.on('mouseleave','travel-korea-fill',()=>{koreaMap.getCanvas().style.cursor=''});
@@ -620,8 +645,9 @@ async function setupWorldCountryLayer(){
    worldCountryBaseGeoJSON=await res.json();
    if(!worldMap||worldMap.getSource('travel-world-countries'))return;
    worldMap.addSource('travel-world-countries',{type:'geojson',data:decorateWorldGeoJSON()});
-   worldMap.addLayer({id:'travel-world-fill',type:'fill',source:'travel-world-countries',paint:mapFillPaint()});
-   worldMap.addLayer({id:'travel-world-line',type:'line',source:'travel-world-countries',paint:mapLinePaint()});
+   const beforeLabel=firstSymbolLayerId(worldMap);
+   worldMap.addLayer({id:'travel-world-fill',type:'fill',source:'travel-world-countries',paint:mapFillPaint()},beforeLabel);
+   worldMap.addLayer({id:'travel-world-line',type:'line',source:'travel-world-countries',paint:mapLinePaint()},beforeLabel);
    worldCountryLayerReady=true;clearMapMarkers(worldMapMarkers);updateWorldCountrySource();
    worldMap.on('mouseenter','travel-world-fill',()=>{worldMap.getCanvas().style.cursor='pointer'});
    worldMap.on('mouseleave','travel-world-fill',()=>{worldMap.getCanvas().style.cursor=''});
@@ -947,15 +973,27 @@ prevMonth.onclick=()=>{selectedDate="";cal.setMonth(cal.getMonth()-1);renderCale
 nextMonth.onclick=()=>{selectedDate="";cal.setMonth(cal.getMonth()+1);renderCalendar()};
 todayMonth.onclick=()=>{selectedDate="";cal=new Date();renderCalendar()};
 if(typeof monthOverviewBtn!=="undefined"&&monthOverviewBtn)monthOverviewBtn.onclick=()=>{selectedDate="";renderCalendar()};
+
+const MAP_BASE_STYLE="https://tiles.openfreemap.org/styles/bright";
+function applyEnglishFirstMapLabels(map){
+ try{
+  const layers=map.getStyle()?.layers||[];
+  layers.forEach(layer=>{
+   if(layer.type!=="symbol"||!layer.layout?.["text-field"])return;
+   if((layer["source-layer"]||"")!=="place")return;
+   try{map.setLayoutProperty(layer.id,"text-field",["coalesce",["get","name_en"],["get","name:latin"],["get","name"]])}catch(_){ }
+  });
+ }catch(_){ }
+}
+function firstSymbolLayerId(map){
+ return (map.getStyle()?.layers||[]).find(layer=>layer.type==="symbol")?.id;
+}
+
 function ensureKoreaMap(){
  if(koreaMap || typeof maplibregl==="undefined") return;
  koreaMap=new maplibregl.Map({
    container:"koreaRealMap",
-   style:{
-     version:8,
-     sources:{osm:{type:"raster",tiles:["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],tileSize:256,attribution:"© OpenStreetMap contributors"}},
-     layers:[{id:"osm",type:"raster",source:"osm"}]
-   },
+   style:MAP_BASE_STYLE,
    center:[127.8,36.3],
    zoom:6.1,
    minZoom:5,
@@ -963,7 +1001,7 @@ function ensureKoreaMap(){
  });
  koreaMap.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-left");
  ensureMapLegend('koreaRealMap');
- koreaMap.on('load',setupKoreaRegionLayer);
+ koreaMap.on('load',()=>{applyEnglishFirstMapLabels(koreaMap);setupKoreaRegionLayer()});
 }
 function clearMapMarkers(list){list.forEach(x=>x.remove());list.length=0}
 function markerElement(status){
@@ -998,11 +1036,7 @@ function ensureWorldMap(){
  if(worldMap || typeof maplibregl==="undefined") return;
  worldMap=new maplibregl.Map({
    container:"worldRealMap",
-   style:{
-     version:8,
-     sources:{osm:{type:"raster",tiles:["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],tileSize:256,attribution:"© OpenStreetMap contributors"}},
-     layers:[{id:"osm",type:"raster",source:"osm"}]
-   },
+   style:MAP_BASE_STYLE,
    center:[10,20],
    zoom:1.3,
    minZoom:1,
@@ -1010,17 +1044,32 @@ function ensureWorldMap(){
  });
  worldMap.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-left");
  ensureMapLegend('worldRealMap');
- worldMap.on('load',setupWorldCountryLayer);
+ worldMap.on('load',()=>{applyEnglishFirstMapLabels(worldMap);setupWorldCountryLayer()});
 }
 function renderWorldFallbackMarkers(){
  if(!worldMap)return;clearMapMarkers(worldMapMarkers);
- const availableGeoNames=new Set(worldCountryBaseGeoJSON?.features?.map(f=>normalizeWorldGeoName(f.properties?.name||''))||[]);
+ const markerRows=new Map();
+ const addCity=(country,city,status,lat=null,lng=null)=>{
+   country=String(country||'').trim();city=String(city||'').trim();if(!country||!city)return;
+   const coord=worldCityCoord(country,city);
+   const useLat=coord?.[0]??Number(lat),useLng=coord?.[1]??Number(lng);
+   if(!Number.isFinite(Number(useLat))||!Number.isFinite(Number(useLng)))return;
+   const key=`${country}|${city}`;const prev=markerRows.get(key);
+   if(!prev||status==='방문')markerRows.set(key,{country,city,status,lat:Number(useLat),lng:Number(useLng)});
+ };
  places.filter(x=>x.place_type==='해외').forEach(x=>{
-   // 국가 폴리곤이 없는 작은 섬/영토 또는 지도 데이터 로드 실패 시에만 점 마커를 사용
-   const geo=worldGeoNameForPlace(x.place_name);if(worldCountryLayerReady&&availableGeoNames.has(geo))return;
-   if(!Number.isFinite(Number(x.longitude))||!Number.isFinite(Number(x.latitude)))return;
-   const el=markerElement(x.status),marker=new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([Number(x.longitude),Number(x.latitude)]).addTo(worldMap);
-   el.addEventListener('click',()=>showWorldCountry(geo));worldMapMarkers.push(marker);
+   const cities=placeCities(x);
+   cities.forEach(city=>addCity(x.place_name,city,x.status,x.latitude,x.longitude));
+   if(!cities.length&&!worldCountryLayerReady)addCity(x.place_name,x.place_name,x.status,x.latitude,x.longitude);
+ });
+ trips.filter(x=>x.trip_type==='해외').forEach(x=>{
+   const city=String(x.city||'').trim();if(city)addCity(x.country,city,x.status==='완료'?'방문':x.status==='버킷리스트'?'버킷리스트':'예정');
+ });
+ markerRows.forEach(x=>{
+   const el=markerElement(x.status==='방문'?'방문':'버킷리스트');
+   el.title=`${x.country} · ${x.city} · ${x.status}`;
+   const marker=new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([x.lng,x.lat]).addTo(worldMap);
+   el.addEventListener('click',()=>showWorldCountry(worldGeoNameForPlace(x.country)));worldMapMarkers.push(marker);
  });
 }
 function renderWorld(){
@@ -1098,7 +1147,7 @@ placeFormPublic.onsubmit=async e=>{
  if(!cities.length){showFormError("placeFormPublic",new Error(type==="국내"?"방문한 도시·군·구를 하나 이상 선택해 주세요.":"방문한 해외 도시·지역을 하나 이상 선택해 주세요."));return}
  const city=cities[0]||"";
  const name=type==="국내"?(city||region):placeNameEdit.value;
- const coord=type==="국내"?(KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]):(PLACE_PRESETS["해외"]||{})[name];
+ const coord=type==="국내"?(KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]):(worldCityCoord(name,city)||(PLACE_PRESETS["해외"]||{})[name]);
  if(!coord)return;
  const now=new Date().toISOString();
  const startDate=placeStartEdit.value||null,endDate=placeEndEdit.value||startDate;
