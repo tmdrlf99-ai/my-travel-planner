@@ -6,6 +6,20 @@ const money=n=>"₩"+Number(n||0).toLocaleString("ko-KR");
 let trips=[],events=[],budgets=[],regions=[],worldPlaces=[];
 let cal=new Date(),selectedDate="",selectedBudgetTrip="";
 
+const KR_HOLIDAYS_2026={
+ "2026-01-01":"신정",
+ "2026-02-16":"설날 연휴","2026-02-17":"설날","2026-02-18":"설날 연휴",
+ "2026-03-01":"삼일절","2026-03-02":"대체공휴일",
+ "2026-05-05":"어린이날","2026-05-24":"부처님오신날","2026-05-25":"대체공휴일",
+ "2026-06-03":"지방선거일","2026-06-06":"현충일",
+ "2026-08-15":"광복절","2026-08-17":"대체공휴일",
+ "2026-09-24":"추석 연휴","2026-09-25":"추석","2026-09-26":"추석 연휴",
+ "2026-10-03":"개천절","2026-10-05":"대체공휴일","2026-10-09":"한글날",
+ "2026-12-25":"성탄절"
+};
+
+let koreaMap=null,koreaMarkers=[];
+
 function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.hidden=true,2200)}
 function openModal(id){$("#editorBackdrop").hidden=false;$("#"+id).hidden=false}
 function closeModal(id){$("#"+id).hidden=true;if($$(".editor-modal:not([hidden])").length===0)$("#editorBackdrop").hidden=true}
@@ -47,8 +61,25 @@ function renderCalendar(){
  const y=cal.getFullYear(),m=cal.getMonth();monthTitle.textContent=`${y}년 ${m+1}월`;
  const first=new Date(y,m,1),start=new Date(y,m,1-first.getDay()),today=fmt(new Date());
  let html="";
- for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const k=fmt(d),has=events.some(x=>x.event_date===k)||trips.some(x=>x.start_date===k||x.end_date===k);html+=`<button class="day ${d.getMonth()!==m?"other":""} ${k===today?"today":""} ${k===selectedDate?"selected":""} ${has?"has-event":""}" data-date="${k}">${d.getDate()}</button>`}
- calendarGrid.innerHTML=html;$$(".day").forEach(b=>b.onclick=()=>{selectedDate=b.dataset.date;renderCalendar();renderDay()});renderDay();
+ for(let i=0;i<42;i++){
+   const d=new Date(start);d.setDate(start.getDate()+i);
+   const k=fmt(d),dow=d.getDay(),holiday=KR_HOLIDAYS_2026[k]||"";
+   const has=events.some(x=>x.event_date===k)||trips.some(x=>x.start_date===k||x.end_date===k);
+   const cls=[
+     "day",
+     d.getMonth()!==m?"other":"",
+     k===today?"today":"",
+     k===selectedDate?"selected":"",
+     has?"has-event":"",
+     dow===0?"sunday":"",
+     dow===6?"saturday":"",
+     holiday?"holiday":""
+   ].filter(Boolean).join(" ");
+   html+=`<button class="${cls}" data-date="${k}" title="${holiday||""}"><span>${d.getDate()}</span>${holiday?`<small class="holiday-name">${esc(holiday)}</small>`:""}</button>`;
+ }
+ calendarGrid.innerHTML=html;
+ $$(".day").forEach(b=>b.onclick=()=>{selectedDate=b.dataset.date;renderCalendar();renderDay()});
+ renderDay();
 }
 function renderDay(){
  const list=[...events.filter(x=>x.event_date===selectedDate).map(x=>({id:x.id,kind:"event",type:x.category||"일정",title:x.title,sub:x.description||"",author:x.author_name||""})),
@@ -60,13 +91,35 @@ function renderDay(){
 }
 prevMonth.onclick=()=>{cal.setMonth(cal.getMonth()-1);renderCalendar()};nextMonth.onclick=()=>{cal.setMonth(cal.getMonth()+1);renderCalendar()};todayMonth.onclick=()=>{cal=new Date();renderCalendar()};
 function renderKorea(){
- const visited=new Set(trips.filter(x=>x.trip_type==="국내").map(x=>x.region));
- $$(".korea-visual button").forEach(b=>{b.classList.toggle("visited",visited.has(b.dataset.region));b.onclick=()=>{$$(".korea-visual button").forEach(x=>x.classList.remove("active"));b.classList.add("active");const r=b.dataset.region,related=trips.filter(x=>x.region===r);koreaRegion.textContent=r;koreaDesc.textContent=related.length?`${r}에 등록된 여행 ${related.length}건입니다.`:`${r}에 아직 등록된 여행이 없습니다.`;koreaTripList.innerHTML=related.map(x=>`<div class="mini-trip" data-trip="${x.id}"><b>${esc(x.title)}</b><small>${x.start_date||""} · ${esc(x.city||"")}${x.author_name?` · ${esc(x.author_name)}`:""}</small></div>`).join("");$$("#koreaTripList [data-trip]").forEach(el=>el.onclick=()=>editTrip(Number(el.dataset.trip)))}})}
-function renderWorld(){
- const fallback=[["대한민국",74,35],["일본",82,35],["베트남",76,53],["프랑스",47,31],["미국",18,32],["호주",81,78]];
- const rows=worldPlaces.length?worldPlaces:fallback.map((x,i)=>({country:x[0],x_percent:x[1],y_percent:x[2],status:i<3?"방문":"버킷리스트"}));
- worldMarkers.innerHTML=rows.map((x,i)=>`<button class="world-marker ${x.status==="방문"?"visited":"wishlist"}" data-index="${i}" style="left:${x.x_percent}%;top:${x.y_percent}%">${esc(x.country)}</button>`).join("");
- $$(".world-marker").forEach(b=>b.onclick=()=>{const x=rows[Number(b.dataset.index)],related=trips.filter(t=>t.country===x.country);worldCountry.textContent=x.country;worldDesc.textContent=x.status==="방문"?"방문 기록이 있는 국가입니다.":"가고 싶은 곳으로 등록된 국가입니다.";worldTripList.innerHTML=related.map(t=>`<div class="mini-trip" data-trip="${t.id}"><b>${esc(t.title)}</b><small>${t.start_date||""} · ${esc(t.city||"")}${t.author_name?` · ${esc(t.author_name)}`:""}</small></div>`).join("")||'<div class="mini-trip"><small>등록된 여행이 없습니다.</small></div>';$$("#worldTripList [data-trip]").forEach(el=>el.onclick=()=>editTrip(Number(el.dataset.trip)))});
+ if(typeof L==="undefined") return;
+ if(!koreaMap){
+   koreaMap=L.map("koreaRealMap",{zoomControl:true,scrollWheelZoom:false}).setView([36.3,127.8],7);
+   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+     maxZoom:18,
+     attribution:'&copy; OpenStreetMap contributors'
+   }).addTo(koreaMap);
+ }
+ koreaMarkers.forEach(m=>m.remove()); koreaMarkers=[];
+ const coords={
+   "서울":[37.5665,126.9780],"경기":[37.4138,127.5183],"강원":[37.8228,128.1555],
+   "충청":[36.6357,127.4917],"전라":[35.1595,126.8526],"경상":[35.8714,128.6014],"제주":[33.4996,126.5312]
+ };
+ const counts={}; trips.filter(x=>x.trip_type==="국내").forEach(x=>{if(x.region)counts[x.region]=(counts[x.region]||0)+1});
+ Object.entries(coords).forEach(([region,latlng])=>{
+   const visited=!!counts[region];
+   const icon=L.divIcon({className:"",html:`<div class="korea-marker ${visited?"":"empty"}"></div>`,iconSize:[15,15],iconAnchor:[7,7]});
+   const marker=L.marker(latlng,{icon}).addTo(koreaMap);
+   marker.bindTooltip(`${region}${visited?` · 여행 ${counts[region]}건`:""}`,{direction:"top",offset:[0,-7]});
+   marker.on("click",()=>{
+     const related=trips.filter(x=>x.region===region);
+     koreaRegion.textContent=region;
+     koreaDesc.textContent=related.length?`${region}에 등록된 여행 ${related.length}건입니다.`:`${region}에 아직 등록된 여행이 없습니다.`;
+     koreaTripList.innerHTML=related.map(x=>`<div class="mini-trip" data-trip="${x.id}"><b>${esc(x.title)}</b><small>${x.start_date||""} · ${esc(x.city||"")}${x.author_name?` · ${esc(x.author_name)}`:""}</small></div>`).join("")||'<div class="mini-trip"><small>등록된 여행이 없습니다.</small></div>';
+     $$("#koreaTripList [data-trip]").forEach(el=>el.onclick=()=>editTrip(Number(el.dataset.trip)));
+   });
+   koreaMarkers.push(marker);
+ });
+ setTimeout(()=>koreaMap.invalidateSize(),50);
 }
 function renderBoard(){
  const q=boardSearch.value.toLowerCase(),type=boardType.value,status=boardStatus.value;

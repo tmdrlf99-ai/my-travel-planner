@@ -114,3 +114,81 @@ body{font-size:16px!important}
   .modal-actions>div{display:none}
   .danger-btn{grid-column:1}
 }
+
+
+/* ===== v4 readability / calendar / real map ===== */
+/* 작은 글씨 전반 확대 */
+:root{--tiny:11.5px;--small:12.5px;--body-sm:13.5px}
+body{font-size:17px!important}
+.topbar-copy{font-size:13px!important}
+.brand span,.side-caption,.next-trip>span,.next-trip small,.eyebrow,
+.hero-tags span,.hero-summary>span,.summary-stats small,.summary-budget small,
+.quick-grid small,.card-head span,.section-head>span,.trip-list small,.trip-list span,
+.day-head span,.day-head>b,.day-event time,.day-event small,.map-info>span,
+.mini-trip small,.status-chip,.budget-summary-grid span,.author-note{
+  font-size:var(--tiny)!important;
+}
+.nav a,.next-trip p,.hero-search button,.quick-grid p,.budget-mini>div,
+.calendar-toolbar button,.week span,.day,.board-row>span,.board-row time,
+.board-tools input,.board-tools select,.budget-filter label,.budget-filter select,
+.budget-row b,.budget-row span,.editor-modal label,.modal-actions button{
+  font-size:var(--small)!important;
+}
+.hero p,.section-head p,.map-info p,.editor-modal input,.editor-modal select,.editor-modal textarea{
+  font-size:var(--body-sm)!important;
+}
+.next-trip strong,.quick-grid strong,.trip-list b,.day-event strong,.mini-trip b,.board-row b{
+  font-size:14px!important;
+}
+
+/* 사이드 예정여행 문구 한 줄 */
+.next-trip strong,.next-trip p,.empty-mini{
+  white-space:nowrap;
+}
+.next-trip{overflow:visible}
+.next-trip p{line-height:1.35}
+
+/* 달력 요일 색상 */
+.week span:first-child{color:#d94b4b!important;font-weight:800}
+.week span:last-child{color:#3578d4!important;font-weight:800}
+.day.sunday,.day.holiday{color:#d94b4b!important;font-weight:800}
+.day.saturday{color:#3578d4!important;font-weight:800}
+.day.other.sunday,.day.other.holiday{color:#e8a3a3!important}
+.day.other.saturday{color:#9ab8e4!important}
+.day.holiday{background:#fff7f7}
+.day.saturday:not(.other){background:#f7faff}
+.holiday-name{
+  display:block;
+  margin-top:2px;
+  font-size:9px!important;
+  line-height:1.1;
+  color:#d94b4b;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* 실제 지도 */
+.korea-real-map{
+  min-height:430px;
+  width:100%;
+  border-radius:18px;
+  overflow:hidden;
+  background:#eef5f2;
+  border:1px solid #dbe6e4;
+  z-index:1;
+}
+.korea-real-map .leaflet-control-attribution{font-size:9px!important}
+.korea-real-map .leaflet-popup-content{font-size:12px!important;line-height:1.5}
+.korea-real-map .leaflet-popup-content b{font-size:13px!important}
+.korea-marker{
+  width:15px;height:15px;border-radius:50%;
+  background:#63c4a5;border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(55,91,80,.24);
+}
+.korea-marker.empty{background:#9bb6be}
+
+@media(max-width:720px){
+  .korea-real-map{min-height:360px}
+  .next-trip strong,.next-trip p{white-space:normal}
+}

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>My Travel Planner</title>
   <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 <body>
 <div class="app-shell">
@@ -110,16 +111,8 @@
       <section id="korea" class="panel section">
         <div class="section-head"><span>KOREA MAP</span><h2>국내 여행 지도</h2><p>방문했거나 예정인 국내 지역을 지도에서 확인합니다.</p></div>
         <div class="map-layout">
-          <div class="korea-visual">
-            <button data-region="서울" style="--x:48%;--y:18%">서울</button>
-            <button data-region="경기" style="--x:39%;--y:27%">경기</button>
-            <button data-region="강원" style="--x:66%;--y:22%">강원</button>
-            <button data-region="충청" style="--x:47%;--y:43%">충청</button>
-            <button data-region="전라" style="--x:35%;--y:63%">전라</button>
-            <button data-region="경상" style="--x:65%;--y:60%">경상</button>
-            <button data-region="제주" style="--x:45%;--y:88%">제주</button>
-          </div>
-          <div class="map-info">
+          <div id="koreaRealMap" class="korea-real-map" aria-label="대한민국 실제 지도"></div>
+<div class="map-info">
             <span>REGION</span><h3 id="koreaRegion">지역을 선택해 주세요</h3>
             <p id="koreaDesc">지도에서 지역을 선택하면 등록된 여행과 방문 기록을 보여드립니다.</p>
             <div id="koreaTripList" class="mini-trip-list"></div>
@@ -250,6 +243,7 @@
 
 <div id="toast" class="toast" hidden></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
