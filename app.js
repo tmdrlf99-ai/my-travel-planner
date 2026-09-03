@@ -34,6 +34,15 @@ function mergeRows(serverRows,localRows){
  (localRows||[]).forEach(x=>map.set(String(x.id),x));
  return [...map.values()];
 }
+function apiErrorText(value){
+ if(value==null) return "";
+ if(typeof value==="string") return value;
+ if(value instanceof Error) return value.message||String(value);
+ if(typeof value==="object"){
+  return value.message||value.details||value.hint||value.error_description||value.error||(()=>{try{return JSON.stringify(value)}catch(_){return String(value)}})();
+ }
+ return String(value);
+}
 async function apiData(table,method="GET",row=null,id=null){
  const qs=new URLSearchParams();
  if(table) qs.set("table",table);
@@ -44,8 +53,15 @@ async function apiData(table,method="GET",row=null,id=null){
  try{res=await fetch(`/api/travel-data?${qs.toString()}`,opt)}
  catch(err){throw new Error("동기화 서버에 연결할 수 없습니다. Vercel 배포 상태를 확인해 주세요.")}
  let payload={};
- try{payload=await res.json()}catch(_){payload={}}
- if(!res.ok||payload.error) throw new Error(payload.error||`동기화 서버 오류 (HTTP ${res.status})`);
+ try{payload=await res.json()}catch(_){
+  const txt=await res.text().catch(()=>"");
+  payload=txt?{error:txt}:{};
+ }
+ if(!res.ok||payload.error){
+  let msg=apiErrorText(payload.error)||apiErrorText(payload);
+  if(res.status===404) msg="동기화 API 경로(/api/travel-data)를 찾지 못했습니다. GitHub에 api/travel-data.js가 실제 폴더 경로로 등록되어 있는지 확인해 주세요.";
+  throw new Error(msg||`동기화 서버 오류 (HTTP ${res.status})`);
+ }
  return payload.data;
 }
 function positiveServerRows(rows){return (rows||[]).filter(x=>Number(x.id)>0)}
@@ -74,7 +90,7 @@ async function quietSync(){
 }
 function startAutoSync(){
  clearInterval(window.__travelSyncTimer);
- window.__travelSyncTimer=setInterval(quietSync,5000);
+ window.__travelSyncTimer=setInterval(quietSync,3000);
  document.addEventListener("visibilitychange",()=>{if(!document.hidden)quietSync()});
  window.addEventListener("focus",quietSync);
 }
@@ -438,9 +454,33 @@ deleteBudgetBtn.onclick=async()=>{
 }
 
 openTripCreate.onclick=newTrip;openTripCreate2.onclick=newTrip;openEventCreate.onclick=newEvent;openBudgetCreate.onclick=newBudget;
-$$(".nav a,.quick-grid a").forEach(a=>a.onclick=e=>{const id=(a.dataset.target||a.getAttribute("href")?.replace("#",""));if(id&&document.getElementById(id)){e.preventDefault();document.getElementById(id).scrollIntoView({behavior:"smooth"})}});
-globalSearchBtn.onclick=()=>{const q=globalSearch.value.trim().toLowerCase();if(!q)return;boardSearch.value=q;renderBoard();document.getElementById("board").scrollIntoView({behavior:"smooth"})};
-const ids=["home","calendar","korea","world","places","board","budget"];addEventListener("scroll",()=>{let cur="home";ids.forEach(id=>{const el=document.getElementById(id);if(el&&el.getBoundingClientRect().top<140)cur=id});$$(".nav a").forEach(a=>a.classList.toggle("active",a.dataset.target===cur))},{passive:true});
-loadAll().then(async()=>{await migrateLegacyPlacesInBackground();startAutoSync();});
+const NAV_IDS=["home","calendar","korea","world","places","board","budget"];
+function setActiveNav(id){
+ $$(".nav a").forEach(a=>a.classList.toggle("active",a.dataset.target===id));
+}
+function updateActiveNav(){
+ const doc=document.documentElement;
+ const atBottom=(window.scrollY+window.innerHeight)>=doc.scrollHeight-24;
+ if(atBottom){setActiveNav("budget");return;}
+ const focus=Math.max(120,window.innerHeight*0.30);
+ let cur="home";
+ for(const id of NAV_IDS){
+  const el=document.getElementById(id);if(!el)continue;
+  const r=el.getBoundingClientRect();
+  if(r.top<=focus && r.bottom>90) cur=id;
+ }
+ setActiveNav(cur);
+}
+$$(".nav a,.quick-grid a").forEach(a=>a.onclick=e=>{
+ const id=(a.dataset.target||a.getAttribute("href")?.replace("#",""));
+ if(id&&document.getElementById(id)){
+  e.preventDefault();setActiveNav(id);document.getElementById(id).scrollIntoView({behavior:"smooth",block:"start"});
+ }
+});
+globalSearchBtn.onclick=()=>{const q=globalSearch.value.trim().toLowerCase();if(!q)return;boardSearch.value=q;renderBoard();setActiveNav("board");document.getElementById("board").scrollIntoView({behavior:"smooth"})};
+let __navRaf=0;
+addEventListener("scroll",()=>{if(__navRaf)return;__navRaf=requestAnimationFrame(()=>{__navRaf=0;updateActiveNav()})},{passive:true});
+addEventListener("resize",updateActiveNav,{passive:true});
+loadAll().then(async()=>{await migrateLegacyPlacesInBackground();startAutoSync();updateActiveNav();});
 
 window.addEventListener("unhandledrejection",e=>{console.warn("Background sync failed",e.reason);e.preventDefault();});
