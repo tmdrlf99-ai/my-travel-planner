@@ -1364,3 +1364,14 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
     margin-bottom:12px!important;
   }
 }
+
+
+/* ===== v5.6 저장 우선 + 모바일 세로 리듬 추가 보정 ===== */
+@media(max-width:820px){
+  .section + .section{margin-top:12px!important}
+  .editor-modal form > * + *{margin-top:12px!important}
+  .editor-modal .two-col + label{margin-top:12px!important}
+  .place-summary-grid + .place-tools{margin-top:12px!important}
+  .budget-summary-grid + .budget-filter{margin-top:12px!important}
+  .map-info .mini-trip + .mini-trip{margin-top:8px!important}
+}
