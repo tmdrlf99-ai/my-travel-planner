@@ -162,17 +162,121 @@ const domesticPlaceText=x=>{
  return x.place_name||r||c||"";
 };
 
-const KR_HOLIDAYS_2026={
- "2026-01-01":"신정",
- "2026-02-16":"설날 연휴","2026-02-17":"설날","2026-02-18":"설날 연휴",
- "2026-03-01":"삼일절","2026-03-02":"대체공휴일",
- "2026-05-05":"어린이날","2026-05-24":"부처님오신날","2026-05-25":"대체공휴일",
- "2026-06-03":"지방선거일","2026-06-06":"현충일",
- "2026-08-15":"광복절","2026-08-17":"대체공휴일",
- "2026-09-24":"추석 연휴","2026-09-25":"추석","2026-09-26":"추석 연휴",
- "2026-10-03":"개천절","2026-10-05":"대체공휴일","2026-10-09":"한글날",
- "2026-12-25":"성탄절"
+const KR_LUNAR_HOLIDAY_DATES={
+ 2026:["2026-02-17","2026-05-24","2026-09-25"],
+ 2027:["2027-02-07","2027-05-13","2027-09-15"],
+ 2028:["2028-01-27","2028-05-02","2028-10-03"],
+ 2029:["2029-02-13","2029-05-20","2029-09-22"],
+ 2030:["2030-02-03","2030-05-09","2030-09-12"],
+ 2031:["2031-01-23","2031-05-28","2031-10-01"],
+ 2032:["2032-02-11","2032-05-16","2032-09-19"],
+ 2033:["2033-01-31","2033-05-06","2033-09-08"],
+ 2034:["2034-02-19","2034-05-25","2034-09-27"],
+ 2035:["2035-02-08","2035-05-15","2035-09-16"],
+ 2036:["2036-01-28","2036-05-03","2036-10-04"],
+ 2037:["2037-02-15","2037-05-22","2037-09-24"],
+ 2038:["2038-02-04","2038-05-11","2038-09-13"],
+ 2039:["2039-01-24","2039-04-30","2039-10-02"],
+ 2040:["2040-02-12","2040-05-18","2040-09-21"],
+ 2041:["2041-02-01","2041-05-07","2041-09-10"],
+ 2042:["2042-01-22","2042-05-26","2042-09-28"],
+ 2043:["2043-02-10","2043-05-16","2043-09-17"],
+ 2044:["2044-01-30","2044-05-05","2044-10-05"],
+ 2045:["2045-02-17","2045-05-24","2045-09-25"],
+ 2046:["2046-02-06","2046-05-13","2046-09-15"],
+ 2047:["2047-01-26","2047-05-02","2047-10-04"],
+ 2048:["2048-02-14","2048-05-20","2048-09-22"],
+ 2049:["2049-02-02","2049-05-09","2049-09-11"],
+ 2050:["2050-01-23","2050-05-28","2050-09-30"]
 };
+
+// 선거일·임시공휴일처럼 사전에 계산할 수 없는 날짜는 여기에 추가합니다.
+const KR_SPECIAL_HOLIDAYS={
+ "2026-06-03":"지방선거일",
+ "2028-04-12":"국회의원선거일"
+};
+const KR_HOLIDAY_CACHE={};
+function isoAddDays(iso,days){
+ const [y,m,d]=iso.split("-").map(Number),dt=new Date(y,m-1,d);
+ dt.setDate(dt.getDate()+days);
+ return fmt(dt);
+}
+function isoDow(iso){
+ const [y,m,d]=iso.split("-").map(Number);
+ return new Date(y,m-1,d).getDay();
+}
+function addHoliday(map,iso,name){
+ if(!iso)return;
+ if(map[iso]){
+  const names=map[iso].split(" · ");
+  if(!names.includes(name))map[iso]+=` · ${name}`;
+ }else map[iso]=name;
+}
+function nextFreeHolidayDate(map,iso){
+ let k=isoAddDays(iso,1);
+ while(map[k]||isoDow(k)===0)k=isoAddDays(k,1);
+ return k;
+}
+function getKoreanHolidays(year){
+ if(KR_HOLIDAY_CACHE[year])return KR_HOLIDAY_CACHE[year];
+ const h={};
+ const fixed=[
+  [`${year}-01-01`,"신정",false],
+  [`${year}-03-01`,"삼일절",true],
+  [`${year}-05-01`,"노동절",true],
+  [`${year}-05-05`,"어린이날",true],
+  [`${year}-06-06`,"현충일",false],
+  [`${year}-07-17`,"제헌절",true],
+  [`${year}-08-15`,"광복절",true],
+  [`${year}-10-03`,"개천절",true],
+  [`${year}-10-09`,"한글날",true],
+  [`${year}-12-25`,"성탄절",true]
+ ];
+ fixed.forEach(([iso,name])=>addHoliday(h,iso,name));
+
+ const lunar=KR_LUNAR_HOLIDAY_DATES[year];
+ let seollal=[],chuseok=[];
+ if(lunar){
+  const [seol,buddha,chu]=lunar;
+  seollal=[isoAddDays(seol,-1),seol,isoAddDays(seol,1)];
+  addHoliday(h,seollal[0],"설날 연휴");addHoliday(h,seollal[1],"설날");addHoliday(h,seollal[2],"설날 연휴");
+  addHoliday(h,buddha,"부처님오신날");
+  chuseok=[isoAddDays(chu,-1),chu,isoAddDays(chu,1)];
+  addHoliday(h,chuseok[0],"추석 연휴");addHoliday(h,chuseok[1],"추석");addHoliday(h,chuseok[2],"추석 연휴");
+ }
+ Object.entries(KR_SPECIAL_HOLIDAYS).filter(([k])=>k.startsWith(year+"-")).forEach(([k,v])=>addHoliday(h,k,v));
+
+ // 설·추석은 연휴 중 일요일 또는 다른 공휴일과 겹치면 연휴 뒤 첫 비공휴일을 대체공휴일로 표시합니다.
+ // 같은 날짜에 다른 공휴일까지 겹친 경우(예: 2028 추석+개천절)는 대체공휴일을 중복 생성하지 않습니다.
+ const substituteHandledDates=new Set();
+ const addGroupSubstitute=(days)=>{
+  if(!days.length)return;
+  const triggerDays=days.filter(k=>isoDow(k)===0 || (h[k]||"").includes(" · "));
+  if(triggerDays.length){
+   let sub=days[days.length-1];
+   do{sub=isoAddDays(sub,1)}while(h[sub]||isoDow(sub)===0);
+   addHoliday(h,sub,"대체공휴일");
+   triggerDays.forEach(k=>substituteHandledDates.add(k));
+  }
+ };
+ addGroupSubstitute(seollal);addGroupSubstitute(chuseok);
+
+ // 국경일·부처님오신날·노동절·어린이날·성탄절은 토/일/다른 공휴일과 겹치면 대체공휴일을 부여합니다.
+ const eligible=fixed.filter(x=>x[2]).map(x=>x[0]);
+ if(lunar)eligible.push(lunar[1]);
+ const handled=new Set();
+ eligible.forEach(k=>{
+  if(handled.has(k)||substituteHandledDates.has(k))return; handled.add(k);
+  const weekend=isoDow(k)===0||isoDow(k)===6, overlap=(h[k]||"").includes(" · ");
+  if(weekend||overlap){
+   const sub=nextFreeHolidayDate(h,k);
+   addHoliday(h,sub,"대체공휴일");
+  }
+ });
+ KR_HOLIDAY_CACHE[year]=h;
+ return h;
+}
+
 
 let koreaMap=null,worldMap=null,koreaMapMarkers=[],worldMapMarkers=[];
 
@@ -246,7 +350,7 @@ function renderCalendar(){
  let html="";
  for(let i=0;i<42;i++){
    const d=new Date(start);d.setDate(start.getDate()+i);
-   const k=fmt(d),dow=d.getDay(),holiday=KR_HOLIDAYS_2026[k]||"";
+   const k=fmt(d),dow=d.getDay(),holiday=getKoreanHolidays(d.getFullYear())[k]||"";
    const has=events.some(x=>x.event_date===k)||trips.some(x=>tripOnDate(x,k))||places.some(x=>placeOnDate(x,k));
    const cls=[
      "day",
