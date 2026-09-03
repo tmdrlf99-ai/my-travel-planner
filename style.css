@@ -1375,3 +1375,56 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
   .budget-summary-grid + .budget-filter{margin-top:12px!important}
   .map-info .mini-trip + .mini-trip{margin-top:8px!important}
 }
+
+
+/* ===== v5.7 지도 방문지 마커 크기/형태 수정 ===== */
+/* 공통 button 터치영역 규칙이 지도 마커에 적용되지 않도록 완전 분리 */
+.place-marker{
+  width:12px !important;
+  height:12px !important;
+  min-width:12px !important;
+  min-height:12px !important;
+  max-width:12px !important;
+  max-height:12px !important;
+  aspect-ratio:1 / 1 !important;
+  padding:0 !important;
+  margin:0 !important;
+  border-radius:50% !important;
+  border:2px solid #fff !important;
+  box-sizing:border-box !important;
+  display:block !important;
+  line-height:0 !important;
+  flex:0 0 12px !important;
+  appearance:none !important;
+  -webkit-appearance:none !important;
+  box-shadow:0 1px 5px rgba(55,91,80,.28) !important;
+}
+
+/* 방문 / 버킷 색상 */
+.place-marker.visited{
+  background:#5ebf9f !important;
+}
+.place-marker.bucket{
+  background:#f0a774 !important;
+}
+
+/* 선택됐을 때도 크기는 유지 */
+.place-marker.selected{
+  outline:2px solid rgba(65,105,130,.24) !important;
+  outline-offset:2px !important;
+}
+
+/* 모바일에서도 절대 커지지 않게 고정 */
+@media(max-width:820px){
+  button.place-marker{
+    width:11px !important;
+    height:11px !important;
+    min-width:11px !important;
+    min-height:11px !important;
+    max-width:11px !important;
+    max-height:11px !important;
+    flex-basis:11px !important;
+    padding:0 !important;
+    border-radius:50% !important;
+  }
+}

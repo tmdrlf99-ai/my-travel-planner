@@ -1,4 +1,4 @@
 window.TRAVEL_CONFIG = {
-  SUPABASE_URL: "https://cqlcdexesxujklpwnvyy.supabase.co",
-  SUPABASE_ANON_KEY: "sb_publishable_7RaNiiyEa6XuDZzAgyO5Jg_uDI-l5hj"
+  SUPABASE_URL: "YOUR_SUPABASE_PROJECT_URL",
+  SUPABASE_ANON_KEY: "YOUR_SUPABASE_ANON_KEY"
 };
