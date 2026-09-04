@@ -890,7 +890,12 @@ function renderHero(){
    visitedByToday(x.start_date,x.end_date)
  );
 
- statTrips.textContent=completedYearTrips.length;
+ const registeredYearTrips=trips.filter(x=>
+   x.status!=="완료" &&
+   x.status!=="버킷리스트" &&
+   rangeTouchesYear(x.start_date,x.end_date)
+ );
+ statTrips.textContent=registeredYearTrips.length;
 
  // 국내 방문 지역은 시·군·구 개수가 아니라 상위 시·도 기준으로 집계합니다.
  const domesticVisitedRegions=new Set(
@@ -948,6 +953,9 @@ function dateInRange(k,start,end){
 }
 function tripOnDate(x,k){return dateInRange(k,x.start_date,x.end_date)}
 function placeOnDate(x,k){return dateInRange(k,x.start_date,x.end_date)}
+function eventStartDate(x){return x.start_date||x.event_date||""}
+function eventEndDate(x){return x.end_date||x.start_date||x.event_date||""}
+function eventOnDate(x,k){return dateInRange(k,eventStartDate(x),eventEndDate(x))}
 function compactTripLocation(x){
  if(!x)return "";
  if(x.trip_type==="국내"){
@@ -970,7 +978,7 @@ function calendarLocationLabels(k){
  const add=value=>{const v=String(value||"").trim();if(v&&!labels.includes(v))labels.push(v)};
  trips.filter(x=>tripOnDate(x,k)).forEach(x=>add(compactTripLocation(x)));
  places.filter(x=>placeOnDate(x,k)).forEach(x=>add(compactPlaceLocation(x)));
- events.filter(x=>x.event_date===k&&x.trip_id).forEach(event=>{
+ events.filter(x=>eventOnDate(x,k)&&x.trip_id).forEach(event=>{
   const trip=trips.find(x=>String(x.id)===String(event.trip_id));
   if(trip)add(compactTripLocation(trip));
  });
@@ -990,12 +998,12 @@ function calendarHoverItems(k){
   memo:String(x.memo||"").trim(),
   date:calendarRangeLabel(x.start_date,x.end_date)
  }));
- events.filter(x=>x.event_date===k).forEach(x=>{
+ events.filter(x=>eventOnDate(x,k)).forEach(x=>{
   const trip=x.trip_id?trips.find(t=>String(t.id)===String(x.trip_id)):null;
   add(`event-${x.id}`,{
    location:trip?compactTripLocation(trip):"",
    memo:String(x.description||x.title||"").trim(),
-   date:shortCalendarDate(x.event_date)
+   date:calendarRangeLabel(eventStartDate(x),eventEndDate(x))
   });
  });
  return rows;
@@ -1038,7 +1046,7 @@ function renderCalendar(){
  for(let i=0;i<42;i++){
    const d=new Date(start);d.setDate(start.getDate()+i);
    const k=fmt(d),dow=d.getDay(),holiday=getKoreanHolidays(d.getFullYear())[k]||"";
-   const has=events.some(x=>x.event_date===k)||trips.some(x=>tripOnDate(x,k))||places.some(x=>placeOnDate(x,k));
+   const has=events.some(x=>eventOnDate(x,k))||trips.some(x=>tripOnDate(x,k))||places.some(x=>placeOnDate(x,k));
    const locationLabels=has?calendarLocationLabels(k):[];
    const primaryLocation=locationLabels[0]||"";
    const moreLocations=Math.max(0,locationLabels.length-1);
@@ -1085,7 +1093,7 @@ function overlapsRange(start,end,from,to){
 function renderDay(){
  let list=[];
  if(selectedDate){
-  list=[...events.filter(x=>x.event_date===selectedDate).map(x=>({id:x.id,kind:"event",badge:x.category||"일정",dateLabel:shortCalendarDate(x.event_date),title:x.title,sub:x.description||"",author:x.author_name||"",sortKey:x.event_date})),
+  list=[...events.filter(x=>eventOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"event",badge:x.category||"일정",dateLabel:calendarRangeLabel(eventStartDate(x),eventEndDate(x)),title:x.title,sub:x.description||"",author:x.author_name||"",sortKey:eventStartDate(x)})),
    ...trips.filter(x=>tripOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"trip",badge:x.start_date===selectedDate?"출발":x.end_date===selectedDate?"종료":"여행중",dateLabel:shortCalendarDate(selectedDate),title:x.title,sub:x.city||x.country||x.region||"",author:x.author_name||"",sortKey:x.start_date||selectedDate})),
    ...places.filter(x=>placeOnDate(x,selectedDate)).map(x=>({id:x.id,kind:"place",badge:x.status==="버킷리스트"?"방문계획":"방문지",dateLabel:shortCalendarDate(selectedDate),title:x.place_type==="국내"?domesticPlaceText(x):x.place_name,sub:x.memo||x.place_type||"",author:x.author_name||"",sortKey:x.start_date||selectedDate}))];
   dayTitle.textContent=`${Number(selectedDate.slice(5,7))}월 ${Number(selectedDate.slice(8,10))}일 일정`;
@@ -1093,7 +1101,7 @@ function renderDay(){
  }else{
   const y=cal.getFullYear(),m=cal.getMonth();
   const from=fmt(new Date(y,m,1)),to=fmt(new Date(y,m+1,0));
-  list=[...events.filter(x=>x.event_date>=from&&x.event_date<=to).map(x=>({id:x.id,kind:"event",badge:x.category||"일정",dateLabel:shortCalendarDate(x.event_date),title:x.title,sub:x.description||"",author:x.author_name||"",sortKey:x.event_date})),
+  list=[...events.filter(x=>overlapsRange(eventStartDate(x),eventEndDate(x),from,to)).map(x=>({id:x.id,kind:"event",badge:x.category||"일정",dateLabel:calendarRangeLabel(eventStartDate(x),eventEndDate(x)),title:x.title,sub:x.description||"",author:x.author_name||"",sortKey:eventStartDate(x)})),
    ...trips.filter(x=>overlapsRange(x.start_date,x.end_date,from,to)).map(x=>({id:x.id,kind:"trip",badge:"여행",dateLabel:calendarRangeLabel(x.start_date,x.end_date),title:x.title,sub:x.city||x.country||x.region||"",author:x.author_name||"",sortKey:x.start_date||from})),
    ...places.filter(x=>overlapsRange(x.start_date,x.end_date,from,to)).map(x=>({id:x.id,kind:"place",badge:x.status==="버킷리스트"?"방문계획":"방문지",dateLabel:calendarRangeLabel(x.start_date,x.end_date),title:x.place_type==="국내"?domesticPlaceText(x):x.place_name,sub:x.memo||x.place_type||"",author:x.author_name||"",sortKey:x.start_date||from}))];
   dayTitle.textContent=`${m+1}월 전체 일정`;
@@ -1430,16 +1438,52 @@ deleteTripBtn.onclick=async()=>{
 }
 
 /* 일정 CRUD */
-function resetEventForm(){eventFormPublic.reset();eventEditId.value="";deleteEventBtn.hidden=true;eventModalTitle.textContent="일정 추가";eventCategoryEdit.value="일정";eventDateEdit.value=selectedDate||fmt(new Date())}
+function resetEventForm(){
+ eventFormPublic.reset();
+ eventEditId.value="";
+ deleteEventBtn.hidden=true;
+ eventModalTitle.textContent="일정 추가";
+ eventCategoryEdit.value="일정";
+ const baseDate=selectedDate||fmt(new Date());
+ eventDateEdit.value=baseDate;
+ eventEndDateEdit.value=baseDate;
+}
 function newEvent(){resetEventForm();openModal("eventModal")}
-function editEvent(id){const x=events.find(v=>v.id===id);if(!x)return;eventEditId.value=x.id;eventTripEdit.value=x.trip_id||"";eventDateEdit.value=x.event_date;eventCategoryEdit.value=x.category||"일정";eventTitleEdit.value=x.title;eventDescEdit.value=x.description||"";eventAuthorEdit.value=x.author_name||"";eventModalTitle.textContent="일정 수정";deleteEventBtn.hidden=false;openModal("eventModal")}
+function editEvent(id){
+ const x=events.find(v=>v.id===id);if(!x)return;
+ eventEditId.value=x.id;
+ eventTripEdit.value=x.trip_id||"";
+ eventDateEdit.value=eventStartDate(x);
+ eventEndDateEdit.value=eventEndDate(x);
+ eventCategoryEdit.value=x.category||"일정";
+ eventTitleEdit.value=x.title;
+ eventDescEdit.value=x.description||"";
+ eventAuthorEdit.value=x.author_name||"";
+ eventModalTitle.textContent="일정 수정";
+ deleteEventBtn.hidden=false;
+ openModal("eventModal");
+}
 eventFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("eventFormPublic");
  const existing=eventEditId.value;const id=existing?Number(existing):null;
- const p={trip_id:eventTripEdit.value?Number(eventTripEdit.value):null,event_date:eventDateEdit.value,category:eventCategoryEdit.value.trim()||"일정",title:eventTitleEdit.value.trim(),description:eventDescEdit.value.trim(),author_name:eventAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
+ const startDate=eventDateEdit.value;
+ const endDate=eventEndDateEdit.value||startDate;
+ if(endDate<startDate){showFormError("eventFormPublic","마지막 복귀 일자는 시작 일자보다 빠를 수 없습니다.");return;}
+ const p={
+  trip_id:eventTripEdit.value?Number(eventTripEdit.value):null,
+  event_date:startDate,
+  start_date:startDate,
+  end_date:endDate,
+  category:eventCategoryEdit.value.trim()||"일정",
+  title:eventTitleEdit.value.trim(),
+  description:eventDescEdit.value.trim(),
+  author_name:eventAuthorEdit.value.trim(),
+  is_visible:true,
+  updated_at:new Date().toISOString()
+ };
  try{
   const saved=(id&&id>0)?await apiData("travel_events","PUT",p,id):await apiData("travel_events","POST",p);
-  if(id)localDelete("events",id);if(saved)localUpsert("events",saved);selectedDate=eventDateEdit.value;
+  if(id)localDelete("events",id);if(saved)localUpsert("events",saved);selectedDate=startDate;
   closeModal("eventModal");toast(existing?"일정이 수정·동기화되었습니다.":"일정이 저장·동기화되었습니다.");await loadAll();
  }catch(err){showFormError("eventFormPublic",err)}
 }
