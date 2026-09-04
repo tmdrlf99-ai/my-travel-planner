@@ -1185,8 +1185,9 @@ function ensureWorldMap(){
  worldMap=new maplibregl.Map({
    container:"worldRealMap",
    style:MAP_BASE_STYLE,
-   center:[10,20],
-   zoom:1.3,
+   // 해외지도 최초 진입 시 한국을 중심으로 동북아시아가 보이도록 설정
+   center:[127.5,38],
+   zoom:2.8,
    minZoom:1,
    maxZoom:8
  });

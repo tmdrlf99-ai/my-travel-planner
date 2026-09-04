@@ -1,4 +1,4 @@
-const CACHE_NAME="mtp-pwa-v6-0-32-icon";
+const CACHE_NAME="mtp-pwa-v6-0-33-northeast-asia-map";
 const APP_SHELL=[
   "/",
   "/index.html",
