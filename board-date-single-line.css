@@ -1,0 +1,13 @@
+/* 지역별 일정 - 날짜 한 줄 표시 보정
+   MY TRAVEL PLANNER / OUR TRAVEL PLANNER 공통 */
+@media (min-width: 721px){
+  .board-row{
+    grid-template-columns:70px 180px minmax(0,1fr) 190px 80px!important;
+  }
+
+  .board-row time{
+    white-space:nowrap!important;
+    word-break:keep-all!important;
+    overflow-wrap:normal!important;
+  }
+}
