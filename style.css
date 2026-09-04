@@ -1920,3 +1920,14 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
     max-height:16px !important;
   }
 }
+
+
+/* ===== v6.0.20 searchable country / region controls ===== */
+.editor-modal .location-search{margin-top:7px!important;margin-bottom:6px!important;width:100%!important;background:#fbfdfd!important;border:1px solid #d8e5e9!important;border-radius:10px!important;padding:10px 12px!important;font-size:12px!important;font-weight:650!important;color:#315263!important;outline:none!important}
+.editor-modal .location-search:focus{border-color:#72bfa8!important;box-shadow:0 0 0 3px rgba(89,173,148,.10)!important;background:#fff!important}
+.editor-modal .location-search::placeholder{color:#9aabb2!important;font-weight:500!important}
+.editor-modal .location-search + select{margin-top:0!important}
+.location-search-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:7px}
+.location-search-pair .location-search{margin:0!important}
+.location-search-pair select{min-width:0;width:100%;margin:0!important}
+@media(max-width:720px){.location-search-pair{grid-template-columns:1fr}.editor-modal .location-search{font-size:13px!important}}

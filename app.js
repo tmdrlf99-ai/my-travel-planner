@@ -130,6 +130,60 @@ const PLACE_PRESETS={
 };
 
 
+// ===== v6.0.20 GLOBAL COUNTRY / SEARCHABLE LOCATION DIRECTORY =====
+const WORLD_COUNTRY_DIRECTORY=[{"name":"가나","en":"Ghana","code":"GH","aliases":["Republic of Ghana"]},{"name":"가봉","en":"Gabon","code":"GA","aliases":["Gabonese Republic"]},{"name":"가이아나","en":"Guyana","code":"GY","aliases":["Republic of Guyana"]},{"name":"감비아","en":"Gambia","code":"GM","aliases":["Republic of the Gambia"]},{"name":"건지","en":"Guernsey","code":"GG","aliases":[]},{"name":"과들루프","en":"Guadeloupe","code":"GP","aliases":[]},{"name":"과테말라","en":"Guatemala","code":"GT","aliases":["Republic of Guatemala"]},{"name":"괌","en":"Guam","code":"GU","aliases":["Guam"]},{"name":"그레나다","en":"Grenada","code":"GD","aliases":[]},{"name":"그리스","en":"Greece","code":"GR","aliases":["Hellenic Republic"]},{"name":"그린란드","en":"Greenland","code":"GL","aliases":[]},{"name":"기니","en":"Guinea","code":"GN","aliases":["Republic of Guinea"]},{"name":"기니비사우","en":"Guinea-Bissau","code":"GW","aliases":["Republic of Guinea-Bissau"]},{"name":"나미비아","en":"Namibia","code":"NA","aliases":["Republic of Namibia"]},{"name":"나우루","en":"Nauru","code":"NR","aliases":["Republic of Nauru"]},{"name":"나이지리아","en":"Nigeria","code":"NG","aliases":["Federal Republic of Nigeria"]},{"name":"남극 대륙","en":"Antarctica","code":"AQ","aliases":[]},{"name":"남수단","en":"South Sudan","code":"SS","aliases":["Republic of South Sudan"]},{"name":"남아프리카공화국","en":"South Africa","code":"ZA","aliases":["Republic of South Africa"]},{"name":"네덜란드","en":"Netherlands","code":"NL","aliases":["Kingdom of the Netherlands"]},{"name":"네덜란드령 카리브","en":"Bonaire, Sint Eustatius and Saba","code":"BQ","aliases":["Bonaire, Sint Eustatius and Saba"]},{"name":"네팔","en":"Nepal","code":"NP","aliases":["Federal Democratic Republic of Nepal"]},{"name":"노르웨이","en":"Norway","code":"NO","aliases":["Kingdom of Norway"]},{"name":"노퍽섬","en":"Norfolk Island","code":"NF","aliases":[]},{"name":"뉴질랜드","en":"New Zealand","code":"NZ","aliases":[]},{"name":"뉴칼레도니아","en":"New Caledonia","code":"NC","aliases":[]},{"name":"니우에","en":"Niue","code":"NU","aliases":["Niue"]},{"name":"니제르","en":"Niger","code":"NE","aliases":["Republic of the Niger"]},{"name":"니카라과","en":"Nicaragua","code":"NI","aliases":["Republic of Nicaragua"]},{"name":"대만","en":"Taiwan, Province of China","code":"TW","aliases":["Taiwan, Province of China","Taiwan","타이완"]},{"name":"대한민국","en":"Korea, Republic of","code":"KR","aliases":["South Korea","한국","Korea","Republic of Korea"]},{"name":"덴마크","en":"Denmark","code":"DK","aliases":["Kingdom of Denmark"]},{"name":"도미니카","en":"Dominica","code":"DM","aliases":["Commonwealth of Dominica"]},{"name":"도미니카 공화국","en":"Dominican Republic","code":"DO","aliases":[]},{"name":"독일","en":"Germany","code":"DE","aliases":["Federal Republic of Germany"]},{"name":"동티모르","en":"Timor-Leste","code":"TL","aliases":["Democratic Republic of Timor-Leste"]},{"name":"라오스","en":"Lao People's Democratic Republic","code":"LA","aliases":["Laos"]},{"name":"라이베리아","en":"Liberia","code":"LR","aliases":["Republic of Liberia"]},{"name":"라트비아","en":"Latvia","code":"LV","aliases":["Republic of Latvia"]},{"name":"러시아","en":"Russian Federation","code":"RU","aliases":["Russia"]},{"name":"레바논","en":"Lebanon","code":"LB","aliases":["Lebanese Republic"]},{"name":"레소토","en":"Lesotho","code":"LS","aliases":["Kingdom of Lesotho"]},{"name":"레위니옹","en":"Réunion","code":"RE","aliases":[]},{"name":"루마니아","en":"Romania","code":"RO","aliases":[]},{"name":"룩셈부르크","en":"Luxembourg","code":"LU","aliases":["Grand Duchy of Luxembourg"]},{"name":"르완다","en":"Rwanda","code":"RW","aliases":["Rwandese Republic"]},{"name":"리비아","en":"Libya","code":"LY","aliases":["Libya"]},{"name":"리투아니아","en":"Lithuania","code":"LT","aliases":["Republic of Lithuania"]},{"name":"리히텐슈타인","en":"Liechtenstein","code":"LI","aliases":["Principality of Liechtenstein"]},{"name":"마다가스카르","en":"Madagascar","code":"MG","aliases":["Republic of Madagascar"]},{"name":"마르티니크","en":"Martinique","code":"MQ","aliases":[]},{"name":"마셜 제도","en":"Marshall Islands","code":"MH","aliases":["Republic of the Marshall Islands"]},{"name":"마요트","en":"Mayotte","code":"YT","aliases":[]},{"name":"마카오","en":"Macao","code":"MO","aliases":["Macao Special Administrative Region of China","Macao","Macau"]},{"name":"말라위","en":"Malawi","code":"MW","aliases":["Republic of Malawi"]},{"name":"말레이시아","en":"Malaysia","code":"MY","aliases":[]},{"name":"말리","en":"Mali","code":"ML","aliases":["Republic of Mali"]},{"name":"맨섬","en":"Isle of Man","code":"IM","aliases":[]},{"name":"멕시코","en":"Mexico","code":"MX","aliases":["United Mexican States"]},{"name":"모나코","en":"Monaco","code":"MC","aliases":["Principality of Monaco"]},{"name":"모로코","en":"Morocco","code":"MA","aliases":["Kingdom of Morocco"]},{"name":"모리셔스","en":"Mauritius","code":"MU","aliases":["Republic of Mauritius"]},{"name":"모리타니","en":"Mauritania","code":"MR","aliases":["Islamic Republic of Mauritania"]},{"name":"모잠비크","en":"Mozambique","code":"MZ","aliases":["Republic of Mozambique"]},{"name":"몬테네그로","en":"Montenegro","code":"ME","aliases":["Montenegro"]},{"name":"몬트세라트","en":"Montserrat","code":"MS","aliases":[]},{"name":"몰도바","en":"Moldova, Republic of","code":"MD","aliases":["Republic of Moldova","Moldova"]},{"name":"몰디브","en":"Maldives","code":"MV","aliases":["Republic of Maldives"]},{"name":"몰타","en":"Malta","code":"MT","aliases":["Republic of Malta"]},{"name":"몽골","en":"Mongolia","code":"MN","aliases":[]},{"name":"미국","en":"United States","code":"US","aliases":["United States of America","USA","US","U.S.A.","미합중국"]},{"name":"미국령 버진아일랜드","en":"Virgin Islands, U.S.","code":"VI","aliases":["Virgin Islands of the United States"]},{"name":"미국령 해외 제도","en":"United States Minor Outlying Islands","code":"UM","aliases":[]},{"name":"미얀마","en":"Myanmar","code":"MM","aliases":["Republic of Myanmar"]},{"name":"미크로네시아","en":"Micronesia, Federated States of","code":"FM","aliases":["Federated States of Micronesia"]},{"name":"바누아투","en":"Vanuatu","code":"VU","aliases":["Republic of Vanuatu"]},{"name":"바레인","en":"Bahrain","code":"BH","aliases":["Kingdom of Bahrain"]},{"name":"바베이도스","en":"Barbados","code":"BB","aliases":[]},{"name":"바티칸 시국","en":"Holy See (Vatican City State)","code":"VA","aliases":[]},{"name":"바하마","en":"Bahamas","code":"BS","aliases":["Commonwealth of the Bahamas"]},{"name":"방글라데시","en":"Bangladesh","code":"BD","aliases":["People's Republic of Bangladesh"]},{"name":"버뮤다","en":"Bermuda","code":"BM","aliases":[]},{"name":"베냉","en":"Benin","code":"BJ","aliases":["Republic of Benin"]},{"name":"베네수엘라","en":"Venezuela, Bolivarian Republic of","code":"VE","aliases":["Bolivarian Republic of Venezuela","Venezuela"]},{"name":"베트남","en":"Viet Nam","code":"VN","aliases":["Socialist Republic of Viet Nam","Vietnam"]},{"name":"벨기에","en":"Belgium","code":"BE","aliases":["Kingdom of Belgium"]},{"name":"벨라루스","en":"Belarus","code":"BY","aliases":["Republic of Belarus"]},{"name":"벨리즈","en":"Belize","code":"BZ","aliases":[]},{"name":"보스니아 헤르체고비나","en":"Bosnia and Herzegovina","code":"BA","aliases":["Republic of Bosnia and Herzegovina"]},{"name":"보츠와나","en":"Botswana","code":"BW","aliases":["Republic of Botswana"]},{"name":"볼리비아","en":"Bolivia, Plurinational State of","code":"BO","aliases":["Plurinational State of Bolivia","Bolivia"]},{"name":"부룬디","en":"Burundi","code":"BI","aliases":["Republic of Burundi"]},{"name":"부르키나파소","en":"Burkina Faso","code":"BF","aliases":[]},{"name":"부베섬","en":"Bouvet Island","code":"BV","aliases":[]},{"name":"부탄","en":"Bhutan","code":"BT","aliases":["Kingdom of Bhutan"]},{"name":"북마리아나 제도","en":"Northern Mariana Islands","code":"MP","aliases":["Commonwealth of the Northern Mariana Islands","사이판","Saipan","Northern Mariana Islands"]},{"name":"북마케도니아","en":"North Macedonia","code":"MK","aliases":["Republic of North Macedonia"]},{"name":"북한","en":"Korea, Democratic People's Republic of","code":"KP","aliases":["Democratic People's Republic of Korea","North Korea","DPRK"]},{"name":"불가리아","en":"Bulgaria","code":"BG","aliases":["Republic of Bulgaria"]},{"name":"브라질","en":"Brazil","code":"BR","aliases":["Federative Republic of Brazil"]},{"name":"브루나이","en":"Brunei Darussalam","code":"BN","aliases":["Brunei"]},{"name":"사모아","en":"Samoa","code":"WS","aliases":["Independent State of Samoa"]},{"name":"사우디아라비아","en":"Saudi Arabia","code":"SA","aliases":["Kingdom of Saudi Arabia"]},{"name":"사우스조지아 사우스샌드위치 제도","en":"South Georgia and the South Sandwich Islands","code":"GS","aliases":[]},{"name":"산마리노","en":"San Marino","code":"SM","aliases":["Republic of San Marino"]},{"name":"상투메 프린시페","en":"Sao Tome and Principe","code":"ST","aliases":["Democratic Republic of Sao Tome and Principe"]},{"name":"생마르탱","en":"Saint Martin (French part)","code":"MF","aliases":[]},{"name":"생바르텔레미","en":"Saint Barthélemy","code":"BL","aliases":[]},{"name":"생피에르 미클롱","en":"Saint Pierre and Miquelon","code":"PM","aliases":[]},{"name":"서사하라","en":"Western Sahara","code":"EH","aliases":[]},{"name":"세네갈","en":"Senegal","code":"SN","aliases":["Republic of Senegal"]},{"name":"세르비아","en":"Serbia","code":"RS","aliases":["Republic of Serbia"]},{"name":"세이셸","en":"Seychelles","code":"SC","aliases":["Republic of Seychelles"]},{"name":"세인트루시아","en":"Saint Lucia","code":"LC","aliases":[]},{"name":"세인트빈센트그레나딘","en":"Saint Vincent and the Grenadines","code":"VC","aliases":[]},{"name":"세인트키츠 네비스","en":"Saint Kitts and Nevis","code":"KN","aliases":[]},{"name":"세인트헬레나","en":"Saint Helena, Ascension and Tristan da Cunha","code":"SH","aliases":[]},{"name":"소말리아","en":"Somalia","code":"SO","aliases":["Federal Republic of Somalia"]},{"name":"솔로몬 제도","en":"Solomon Islands","code":"SB","aliases":[]},{"name":"수단","en":"Sudan","code":"SD","aliases":["Republic of the Sudan"]},{"name":"수리남","en":"Suriname","code":"SR","aliases":["Republic of Suriname"]},{"name":"스리랑카","en":"Sri Lanka","code":"LK","aliases":["Democratic Socialist Republic of Sri Lanka"]},{"name":"스발바르제도-얀마웬섬","en":"Svalbard and Jan Mayen","code":"SJ","aliases":[]},{"name":"스웨덴","en":"Sweden","code":"SE","aliases":["Kingdom of Sweden"]},{"name":"스위스","en":"Switzerland","code":"CH","aliases":["Swiss Confederation"]},{"name":"스페인","en":"Spain","code":"ES","aliases":["Kingdom of Spain"]},{"name":"슬로바키아","en":"Slovakia","code":"SK","aliases":["Slovak Republic"]},{"name":"슬로베니아","en":"Slovenia","code":"SI","aliases":["Republic of Slovenia"]},{"name":"시리아","en":"Syrian Arab Republic","code":"SY","aliases":["Syria"]},{"name":"시에라리온","en":"Sierra Leone","code":"SL","aliases":["Republic of Sierra Leone"]},{"name":"신트마르턴","en":"Sint Maarten (Dutch part)","code":"SX","aliases":["Sint Maarten (Dutch part)"]},{"name":"싱가포르","en":"Singapore","code":"SG","aliases":["Republic of Singapore"]},{"name":"아랍에미리트","en":"United Arab Emirates","code":"AE","aliases":["UAE"]},{"name":"아루바","en":"Aruba","code":"AW","aliases":[]},{"name":"아르메니아","en":"Armenia","code":"AM","aliases":["Republic of Armenia"]},{"name":"아르헨티나","en":"Argentina","code":"AR","aliases":["Argentine Republic"]},{"name":"아메리칸 사모아","en":"American Samoa","code":"AS","aliases":[]},{"name":"아이슬란드","en":"Iceland","code":"IS","aliases":["Republic of Iceland"]},{"name":"아이티","en":"Haiti","code":"HT","aliases":["Republic of Haiti"]},{"name":"아일랜드","en":"Ireland","code":"IE","aliases":[]},{"name":"아제르바이잔","en":"Azerbaijan","code":"AZ","aliases":["Republic of Azerbaijan"]},{"name":"아프가니스탄","en":"Afghanistan","code":"AF","aliases":["Islamic Republic of Afghanistan"]},{"name":"안도라","en":"Andorra","code":"AD","aliases":["Principality of Andorra"]},{"name":"알바니아","en":"Albania","code":"AL","aliases":["Republic of Albania"]},{"name":"알제리","en":"Algeria","code":"DZ","aliases":["People's Democratic Republic of Algeria"]},{"name":"앙골라","en":"Angola","code":"AO","aliases":["Republic of Angola"]},{"name":"앤티가 바부다","en":"Antigua and Barbuda","code":"AG","aliases":[]},{"name":"앵귈라","en":"Anguilla","code":"AI","aliases":[]},{"name":"에리트리아","en":"Eritrea","code":"ER","aliases":["the State of Eritrea"]},{"name":"에스와티니","en":"Eswatini","code":"SZ","aliases":["Kingdom of Eswatini"]},{"name":"에스토니아","en":"Estonia","code":"EE","aliases":["Republic of Estonia"]},{"name":"에콰도르","en":"Ecuador","code":"EC","aliases":["Republic of Ecuador"]},{"name":"에티오피아","en":"Ethiopia","code":"ET","aliases":["Federal Democratic Republic of Ethiopia"]},{"name":"엘살바도르","en":"El Salvador","code":"SV","aliases":["Republic of El Salvador"]},{"name":"영국","en":"United Kingdom","code":"GB","aliases":["United Kingdom of Great Britain and Northern Ireland","UK","U.K.","Great Britain","Britain"]},{"name":"영국령 버진아일랜드","en":"Virgin Islands, British","code":"VG","aliases":["British Virgin Islands"]},{"name":"영국령 인도양 지역","en":"British Indian Ocean Territory","code":"IO","aliases":[]},{"name":"예멘","en":"Yemen","code":"YE","aliases":["Republic of Yemen"]},{"name":"오만","en":"Oman","code":"OM","aliases":["Sultanate of Oman"]},{"name":"오스트레일리아","en":"Australia","code":"AU","aliases":[]},{"name":"오스트리아","en":"Austria","code":"AT","aliases":["Republic of Austria"]},{"name":"온두라스","en":"Honduras","code":"HN","aliases":["Republic of Honduras"]},{"name":"올란드 제도","en":"Åland Islands","code":"AX","aliases":[]},{"name":"왈리스-푸투나 제도","en":"Wallis and Futuna","code":"WF","aliases":[]},{"name":"요르단","en":"Jordan","code":"JO","aliases":["Hashemite Kingdom of Jordan"]},{"name":"우간다","en":"Uganda","code":"UG","aliases":["Republic of Uganda"]},{"name":"우루과이","en":"Uruguay","code":"UY","aliases":["Eastern Republic of Uruguay"]},{"name":"우즈베키스탄","en":"Uzbekistan","code":"UZ","aliases":["Republic of Uzbekistan"]},{"name":"우크라이나","en":"Ukraine","code":"UA","aliases":[]},{"name":"이라크","en":"Iraq","code":"IQ","aliases":["Republic of Iraq"]},{"name":"이란","en":"Iran, Islamic Republic of","code":"IR","aliases":["Islamic Republic of Iran","Iran"]},{"name":"이스라엘","en":"Israel","code":"IL","aliases":["State of Israel"]},{"name":"이집트","en":"Egypt","code":"EG","aliases":["Arab Republic of Egypt"]},{"name":"이탈리아","en":"Italy","code":"IT","aliases":["Italian Republic"]},{"name":"인도","en":"India","code":"IN","aliases":["Republic of India"]},{"name":"인도네시아","en":"Indonesia","code":"ID","aliases":["Republic of Indonesia"]},{"name":"일본","en":"Japan","code":"JP","aliases":["Japan","JP"]},{"name":"자메이카","en":"Jamaica","code":"JM","aliases":[]},{"name":"잠비아","en":"Zambia","code":"ZM","aliases":["Republic of Zambia"]},{"name":"저지","en":"Jersey","code":"JE","aliases":[]},{"name":"적도 기니","en":"Equatorial Guinea","code":"GQ","aliases":["Republic of Equatorial Guinea"]},{"name":"조지아","en":"Georgia","code":"GE","aliases":[]},{"name":"중국","en":"China","code":"CN","aliases":["People's Republic of China","China","PRC","중화인민공화국"]},{"name":"중앙 아프리카 공화국","en":"Central African Republic","code":"CF","aliases":[]},{"name":"지부티","en":"Djibouti","code":"DJ","aliases":["Republic of Djibouti"]},{"name":"지브롤터","en":"Gibraltar","code":"GI","aliases":[]},{"name":"짐바브웨","en":"Zimbabwe","code":"ZW","aliases":["Republic of Zimbabwe"]},{"name":"차드","en":"Chad","code":"TD","aliases":["Republic of Chad"]},{"name":"체코","en":"Czechia","code":"CZ","aliases":["Czech Republic","Czechia"]},{"name":"칠레","en":"Chile","code":"CL","aliases":["Republic of Chile"]},{"name":"카메룬","en":"Cameroon","code":"CM","aliases":["Republic of Cameroon"]},{"name":"카보베르데","en":"Cabo Verde","code":"CV","aliases":["Republic of Cabo Verde"]},{"name":"카자흐스탄","en":"Kazakhstan","code":"KZ","aliases":["Republic of Kazakhstan"]},{"name":"카타르","en":"Qatar","code":"QA","aliases":["State of Qatar"]},{"name":"캄보디아","en":"Cambodia","code":"KH","aliases":["Kingdom of Cambodia"]},{"name":"캐나다","en":"Canada","code":"CA","aliases":[]},{"name":"케냐","en":"Kenya","code":"KE","aliases":["Republic of Kenya"]},{"name":"케이맨 제도","en":"Cayman Islands","code":"KY","aliases":[]},{"name":"코모로","en":"Comoros","code":"KM","aliases":["Union of the Comoros"]},{"name":"코소보","en":"Kosovo","code":"XK","aliases":["Republic of Kosovo","Kosovo"]},{"name":"코스타리카","en":"Costa Rica","code":"CR","aliases":["Republic of Costa Rica"]},{"name":"코코스 제도","en":"Cocos (Keeling) Islands","code":"CC","aliases":[]},{"name":"코트디부아르","en":"Côte d'Ivoire","code":"CI","aliases":["Republic of Côte d'Ivoire"]},{"name":"콜롬비아","en":"Colombia","code":"CO","aliases":["Republic of Colombia"]},{"name":"콩고-브라자빌","en":"Congo","code":"CG","aliases":["Republic of the Congo"]},{"name":"콩고-킨샤사","en":"Congo, The Democratic Republic of the","code":"CD","aliases":[]},{"name":"쿠바","en":"Cuba","code":"CU","aliases":["Republic of Cuba"]},{"name":"쿠웨이트","en":"Kuwait","code":"KW","aliases":["State of Kuwait"]},{"name":"쿡 제도","en":"Cook Islands","code":"CK","aliases":[]},{"name":"퀴라소","en":"Curaçao","code":"CW","aliases":["Curaçao"]},{"name":"크로아티아","en":"Croatia","code":"HR","aliases":["Republic of Croatia"]},{"name":"크리스마스섬","en":"Christmas Island","code":"CX","aliases":[]},{"name":"키르기스스탄","en":"Kyrgyzstan","code":"KG","aliases":["Kyrgyz Republic"]},{"name":"키리바시","en":"Kiribati","code":"KI","aliases":["Republic of Kiribati"]},{"name":"키프로스","en":"Cyprus","code":"CY","aliases":["Republic of Cyprus"]},{"name":"타지키스탄","en":"Tajikistan","code":"TJ","aliases":["Republic of Tajikistan"]},{"name":"탄자니아","en":"Tanzania, United Republic of","code":"TZ","aliases":["United Republic of Tanzania","Tanzania"]},{"name":"태국","en":"Thailand","code":"TH","aliases":["Kingdom of Thailand"]},{"name":"터크스 케이커스 제도","en":"Turks and Caicos Islands","code":"TC","aliases":[]},{"name":"토고","en":"Togo","code":"TG","aliases":["Togolese Republic"]},{"name":"토켈라우","en":"Tokelau","code":"TK","aliases":[]},{"name":"통가","en":"Tonga","code":"TO","aliases":["Kingdom of Tonga"]},{"name":"투르크메니스탄","en":"Turkmenistan","code":"TM","aliases":[]},{"name":"투발루","en":"Tuvalu","code":"TV","aliases":[]},{"name":"튀니지","en":"Tunisia","code":"TN","aliases":["Republic of Tunisia"]},{"name":"튀르키예","en":"Türkiye","code":"TR","aliases":["Republic of Türkiye","Turkey","Turkiye"]},{"name":"트리니다드 토바고","en":"Trinidad and Tobago","code":"TT","aliases":["Republic of Trinidad and Tobago"]},{"name":"파나마","en":"Panama","code":"PA","aliases":["Republic of Panama"]},{"name":"파라과이","en":"Paraguay","code":"PY","aliases":["Republic of Paraguay"]},{"name":"파키스탄","en":"Pakistan","code":"PK","aliases":["Islamic Republic of Pakistan"]},{"name":"파푸아뉴기니","en":"Papua New Guinea","code":"PG","aliases":["Independent State of Papua New Guinea"]},{"name":"팔라우","en":"Palau","code":"PW","aliases":["Republic of Palau"]},{"name":"팔레스타인","en":"Palestine, State of","code":"PS","aliases":["the State of Palestine","Palestine"]},{"name":"페로 제도","en":"Faroe Islands","code":"FO","aliases":[]},{"name":"페루","en":"Peru","code":"PE","aliases":["Republic of Peru"]},{"name":"포르투갈","en":"Portugal","code":"PT","aliases":["Portuguese Republic"]},{"name":"포클랜드 제도","en":"Falkland Islands (Malvinas)","code":"FK","aliases":[]},{"name":"폴란드","en":"Poland","code":"PL","aliases":["Republic of Poland"]},{"name":"푸에르토리코","en":"Puerto Rico","code":"PR","aliases":[]},{"name":"프랑스","en":"France","code":"FR","aliases":["French Republic"]},{"name":"프랑스령 기아나","en":"French Guiana","code":"GF","aliases":[]},{"name":"프랑스령 남방 지역","en":"French Southern Territories","code":"TF","aliases":[]},{"name":"프랑스령 폴리네시아","en":"French Polynesia","code":"PF","aliases":[]},{"name":"피지","en":"Fiji","code":"FJ","aliases":["Republic of Fiji"]},{"name":"핀란드","en":"Finland","code":"FI","aliases":["Republic of Finland"]},{"name":"필리핀","en":"Philippines","code":"PH","aliases":["Republic of the Philippines"]},{"name":"핏케언 제도","en":"Pitcairn","code":"PN","aliases":[]},{"name":"허드 맥도널드 제도","en":"Heard Island and McDonald Islands","code":"HM","aliases":[]},{"name":"헝가리","en":"Hungary","code":"HU","aliases":["Hungary"]},{"name":"홍콩","en":"Hong Kong","code":"HK","aliases":["Hong Kong Special Administrative Region of China","Hong Kong"]}];
+const WORLD_COUNTRY_NAMES=WORLD_COUNTRY_DIRECTORY.map(x=>x.name);
+const WORLD_COUNTRY_BY_NAME=Object.fromEntries(WORLD_COUNTRY_DIRECTORY.map(x=>[x.name,x]));
+const WORLD_COUNTRY_CENTERS={"아루바":[12.5,-69.966667],"아프가니스탄":[33.0,65.0],"앙골라":[-12.5,18.5],"앵귈라":[18.25,-63.166667],"알바니아":[41.0,20.0],"아랍에미리트":[24.0,54.0],"아르헨티나":[-34.0,-64.0],"아르메니아":[40.0,45.0],"아메리칸 사모아":[-14.333333,-170.0],"앤티가 바부다":[17.05,-61.8],"오스트레일리아":[-27.0,133.0],"오스트리아":[47.333333,13.333333],"아제르바이잔":[40.5,47.5],"부룬디":[-3.5,30.0],"벨기에":[50.833333,4.0],"베냉":[9.5,2.25],"부르키나파소":[13.0,-2.0],"방글라데시":[24.0,90.0],"불가리아":[43.0,25.0],"바레인":[26.0,50.55],"바하마":[24.25,-76.0],"보스니아 헤르체고비나":[44.0,18.0],"벨라루스":[53.0,28.0],"벨리즈":[17.25,-88.75],"버뮤다":[32.333333,-64.75],"볼리비아":[-17.0,-65.0],"브라질":[-10.0,-55.0],"바베이도스":[13.166667,-59.533333],"부탄":[27.5,90.5],"보츠와나":[-22.0,24.0],"중앙 아프리카 공화국":[7.0,21.0],"캐나다":[60.0,-95.0],"코코스 제도":[-12.5,96.833333],"스위스":[47.0,8.0],"칠레":[-30.0,-71.0],"중국":[35.0,105.0],"코트디부아르":[8.0,-5.0],"카메룬":[6.0,12.0],"콩고-브라자빌":[-1.0,15.0],"쿡 제도":[-21.233333,-159.766667],"콜롬비아":[4.0,-72.0],"코모로":[-12.166667,44.25],"카보베르데":[16.0,-24.0],"코스타리카":[10.0,-84.0],"쿠바":[21.5,-80.0],"크리스마스섬":[-10.5,105.666667],"케이맨 제도":[19.5,-80.5],"키프로스":[35.0,33.0],"체코":[49.75,15.5],"독일":[51.0,9.0],"지부티":[11.5,43.0],"도미니카":[15.416667,-61.333333],"덴마크":[56.0,10.0],"도미니카 공화국":[19.0,-70.666667],"알제리":[28.0,3.0],"에콰도르":[-2.0,-77.5],"이집트":[27.0,30.0],"에리트리아":[15.0,39.0],"서사하라":[24.5,-13.0],"스페인":[40.0,-4.0],"에스토니아":[59.0,26.0],"에티오피아":[8.0,38.0],"핀란드":[64.0,26.0],"피지":[-18.0,175.0],"프랑스":[46.0,2.0],"페로 제도":[62.0,-7.0],"미크로네시아":[6.916667,158.25],"가봉":[-1.0,11.75],"영국":[54.0,-2.0],"조지아":[42.0,43.5],"건지":[49.466667,-2.583333],"가나":[8.0,-2.0],"지브롤터":[36.133333,-5.35],"기니":[11.0,-10.0],"과들루프":[16.25,-61.583333],"감비아":[13.466667,-16.566667],"기니비사우":[12.0,-15.0],"적도 기니":[2.0,10.0],"그리스":[39.0,22.0],"그레나다":[12.116667,-61.666667],"그린란드":[72.0,-40.0],"과테말라":[15.5,-90.25],"프랑스령 기아나":[4.0,-53.0],"괌":[13.466667,144.783333],"가이아나":[5.0,-59.0],"홍콩":[22.25,114.166667],"허드 맥도널드 제도":[-53.1,72.516667],"온두라스":[15.0,-86.5],"크로아티아":[45.166667,15.5],"아이티":[19.0,-72.416667],"헝가리":[47.0,20.0],"인도네시아":[-5.0,120.0],"맨섬":[54.25,-4.5],"인도":[20.0,77.0],"영국령 인도양 지역":[-6.0,71.5],"아일랜드":[53.0,-8.0],"이란":[32.0,53.0],"이라크":[33.0,44.0],"아이슬란드":[65.0,-18.0],"이스라엘":[31.5,34.75],"이탈리아":[42.833333,12.833333],"자메이카":[18.25,-77.5],"저지":[49.25,-2.166667],"요르단":[31.0,36.0],"일본":[36.0,138.0],"카자흐스탄":[48.0,68.0],"케냐":[1.0,38.0],"키르기스스탄":[41.0,75.0],"캄보디아":[13.0,105.0],"키리바시":[1.416667,173.0],"세인트키츠 네비스":[17.333333,-62.75],"대한민국":[37.0,127.5],"쿠웨이트":[29.5,45.75],"라오스":[18.0,105.0],"레바논":[33.833333,35.833333],"라이베리아":[6.5,-9.5],"리비아":[25.0,17.0],"세인트루시아":[13.883333,-60.966667],"리히텐슈타인":[47.266667,9.533333],"스리랑카":[7.0,81.0],"레소토":[-29.5,28.5],"리투아니아":[56.0,24.0],"룩셈부르크":[49.75,6.166667],"라트비아":[57.0,25.0],"모로코":[32.0,-5.0],"모나코":[43.733333,7.4],"몰도바":[47.0,29.0],"마다가스카르":[-20.0,47.0],"몰디브":[3.25,73.0],"멕시코":[23.0,-102.0],"마셜 제도":[9.0,168.0],"말리":[17.0,-4.0],"몰타":[35.833333,14.583333],"몽골":[46.0,105.0],"북마리아나 제도":[15.2,145.75],"모잠비크":[-18.25,35.0],"모리타니":[20.0,-12.0],"몬트세라트":[16.75,-62.2],"마르티니크":[14.666667,-61.0],"모리셔스":[-20.283333,57.55],"말라위":[-13.5,34.0],"말레이시아":[2.5,112.5],"마요트":[-12.833333,45.166667],"나미비아":[-22.0,17.0],"뉴칼레도니아":[-21.5,165.5],"니제르":[16.0,8.0],"노퍽섬":[-29.033333,167.95],"나이지리아":[10.0,8.0],"니카라과":[13.0,-85.0],"니우에":[-19.033333,-169.866667],"네덜란드":[52.5,5.75],"노르웨이":[62.0,10.0],"네팔":[28.0,84.0],"나우루":[-0.533333,166.916667],"뉴질랜드":[-41.0,174.0],"오만":[21.0,57.0],"파키스탄":[30.0,70.0],"파나마":[9.0,-80.0],"페루":[-10.0,-76.0],"필리핀":[13.0,122.0],"팔라우":[7.5,134.5],"파푸아뉴기니":[-6.0,147.0],"폴란드":[52.0,20.0],"푸에르토리코":[18.25,-66.5],"북한":[40.0,127.0],"포르투갈":[39.5,-8.0],"파라과이":[-23.0,-58.0],"프랑스령 폴리네시아":[-15.0,-140.0],"카타르":[25.5,51.25],"레위니옹":[-21.15,55.5],"루마니아":[46.0,25.0],"러시아":[60.0,100.0],"르완다":[-2.0,30.0],"사우디아라비아":[25.0,45.0],"수단":[15.0,30.0],"세네갈":[14.0,-14.0],"싱가포르":[1.366667,103.8],"사우스조지아 사우스샌드위치 제도":[-54.5,-37.0],"스발바르제도-얀마웬섬":[78.0,20.0],"솔로몬 제도":[-8.0,159.0],"시에라리온":[8.5,-11.5],"엘살바도르":[13.833333,-88.916667],"산마리노":[43.766667,12.416667],"소말리아":[10.0,49.0],"생피에르 미클롱":[46.833333,-56.333333],"세르비아":[44.130502,16.428418],"남수단":[7.0,30.0],"수리남":[4.0,-56.0],"슬로바키아":[48.666667,19.5],"슬로베니아":[46.116667,14.816667],"스웨덴":[62.0,15.0],"세이셸":[-4.583333,55.666667],"시리아":[35.0,38.0],"차드":[15.0,19.0],"토고":[8.0,1.166667],"태국":[15.0,100.0],"타지키스탄":[39.0,71.0],"토켈라우":[-9.0,-172.0],"투르크메니스탄":[40.0,60.0],"동티모르":[-8.833333,125.916667],"통가":[-20.0,-175.0],"트리니다드 토바고":[11.0,-61.0],"튀니지":[34.0,9.0],"투발루":[-8.0,178.0],"대만":[23.5,121.0],"탄자니아":[-6.0,35.0],"우간다":[1.0,32.0],"우크라이나":[49.0,32.0],"우루과이":[-33.0,-56.0],"미국":[38.0,-97.0],"우즈베키스탄":[41.0,64.0],"세인트빈센트그레나딘":[13.25,-61.2],"베네수엘라":[8.0,-66.0],"베트남":[16.166667,107.833333],"바누아투":[-16.0,167.0],"왈리스-푸투나 제도":[-13.3,-176.2],"사모아":[-13.583333,-172.333333],"예멘":[15.0,48.0],"남아프리카공화국":[-29.0,24.0],"잠비아":[-15.0,30.0],"짐바브웨":[-20.0,30.0],"코소보":[42.6026,20.903]};
+const WORLD_COUNTRY_CAPITALS={"아루바":"Oranjestad","아프가니스탄":"Kabul","앙골라":"Luanda","앵귈라":"The Valley","알바니아":"Tirana","아랍에미리트":"Abu Dhabi","아르헨티나":"Buenos Aires","아르메니아":"Yerevan","아메리칸 사모아":"Pago Pago","앤티가 바부다":"Saint John's","오스트레일리아":"Canberra","오스트리아":"Vienna","아제르바이잔":"Baku","부룬디":"Bujumbura","벨기에":"Brussels","베냉":"Porto-Novo","부르키나파소":"Ouagadougou","방글라데시":"Dhaka","불가리아":"Sofia","바레인":"Manama","바하마":"Nassau","보스니아 헤르체고비나":"Sarajevo","벨라루스":"Minsk","벨리즈":"Belmopan","버뮤다":"Hamilton","볼리비아":"Sucre","브라질":"Brasília","바베이도스":"Bridgetown","부탄":"Thimphu","보츠와나":"Gaborone","중앙 아프리카 공화국":"Bangui","캐나다":"Ottawa","코코스 제도":"West Island","스위스":"Bern","칠레":"Santiago","중국":"Beijing","코트디부아르":"Yamoussoukro","카메룬":"Yaoundé","콩고-브라자빌":"Brazzaville","쿡 제도":"Avarua","콜롬비아":"Bogotá","코모로":"Moroni","카보베르데":"Praia","코스타리카":"San José","쿠바":"Havana","크리스마스섬":"Flying Fish Cove","케이맨 제도":"George Town","키프로스":"Nicosia","체코":"Prague","독일":"Berlin","지부티":"Djibouti","도미니카":"Roseau","덴마크":"Copenhagen","도미니카 공화국":"Santo Domingo","알제리":"Algiers","에콰도르":"Quito","이집트":"Cairo","에리트리아":"Asmara","서사하라":"El Aaiún","스페인":"Madrid","에스토니아":"Tallinn","에티오피아":"Addis Ababa","핀란드":"Helsinki","피지":"Suva","프랑스":"Paris","페로 제도":"Tórshavn","미크로네시아":"Palikir","가봉":"Libreville","영국":"London","조지아":"Tbilisi","건지":"St. Peter Port","가나":"Accra","지브롤터":"Gibraltar","기니":"Conakry","과들루프":"Basse-Terre","감비아":"Banjul","기니비사우":"Bissau","적도 기니":"Malabo","그리스":"Athens","그레나다":"St. George's","그린란드":"Nuuk","과테말라":"Guatemala City","프랑스령 기아나":"Cayenne","괌":"Hagåtña","가이아나":"Georgetown","홍콩":"City of Victoria","온두라스":"Tegucigalpa","크로아티아":"Zagreb","아이티":"Port-au-Prince","헝가리":"Budapest","인도네시아":"Jakarta","맨섬":"Douglas","인도":"New Delhi","영국령 인도양 지역":"Diego Garcia","아일랜드":"Dublin","이란":"Tehran","이라크":"Baghdad","아이슬란드":"Reykjavik","이스라엘":"Jerusalem","이탈리아":"Rome","자메이카":"Kingston","저지":"Saint Helier","요르단":"Amman","일본":"Tokyo","카자흐스탄":"Astana","케냐":"Nairobi","키르기스스탄":"Bishkek","캄보디아":"Phnom Penh","키리바시":"South Tarawa","세인트키츠 네비스":"Basseterre","대한민국":"Seoul","쿠웨이트":"Kuwait City","라오스":"Vientiane","레바논":"Beirut","라이베리아":"Monrovia","리비아":"Tripoli","세인트루시아":"Castries","리히텐슈타인":"Vaduz","스리랑카":"Colombo","레소토":"Maseru","리투아니아":"Vilnius","룩셈부르크":"Luxembourg","라트비아":"Riga","모로코":"Rabat","모나코":"Monaco","몰도바":"Chișinău","마다가스카르":"Antananarivo","몰디브":"Malé","멕시코":"Mexico City","마셜 제도":"Majuro","말리":"Bamako","몰타":"Valletta","몽골":"Ulan Bator","북마리아나 제도":"Saipan","모잠비크":"Maputo","모리타니":"Nouakchott","몬트세라트":"Plymouth","마르티니크":"Fort-de-France","모리셔스":"Port Louis","말라위":"Lilongwe","말레이시아":"Kuala Lumpur","마요트":"Mamoudzou","나미비아":"Windhoek","뉴칼레도니아":"Nouméa","니제르":"Niamey","노퍽섬":"Kingston","나이지리아":"Abuja","니카라과":"Managua","니우에":"Alofi","네덜란드":"Amsterdam","노르웨이":"Oslo","네팔":"Kathmandu","나우루":"Yaren","뉴질랜드":"Wellington","오만":"Muscat","파키스탄":"Islamabad","파나마":"Panama City","페루":"Lima","필리핀":"Manila","팔라우":"Ngerulmud","파푸아뉴기니":"Port Moresby","폴란드":"Warsaw","푸에르토리코":"San Juan","북한":"Pyongyang","포르투갈":"Lisbon","파라과이":"Asunción","프랑스령 폴리네시아":"Papeetē","카타르":"Doha","레위니옹":"Saint-Denis","루마니아":"Bucharest","러시아":"Moscow","르완다":"Kigali","사우디아라비아":"Riyadh","수단":"Khartoum","세네갈":"Dakar","싱가포르":"Singapore","사우스조지아 사우스샌드위치 제도":"King Edward Point","스발바르제도-얀마웬섬":"Longyearbyen","솔로몬 제도":"Honiara","시에라리온":"Freetown","엘살바도르":"San Salvador","산마리노":"City of San Marino","소말리아":"Mogadishu","생피에르 미클롱":"Saint-Pierre","세르비아":"Belgrade","남수단":"Juba","수리남":"Paramaribo","슬로바키아":"Bratislava","슬로베니아":"Ljubljana","스웨덴":"Stockholm","세이셸":"Victoria","시리아":"Damascus","차드":"N'Djamena","토고":"Lomé","태국":"Bangkok","타지키스탄":"Dushanbe","토켈라우":"Fakaofo","투르크메니스탄":"Ashgabat","동티모르":"Dili","통가":"Nuku'alofa","트리니다드 토바고":"Port of Spain","튀니지":"Tunis","투발루":"Funafuti","대만":"Taipei","탄자니아":"Dodoma","우간다":"Kampala","우크라이나":"Kiev","우루과이":"Montevideo","미국":"Washington D.C.","우즈베키스탄":"Tashkent","세인트빈센트그레나딘":"Kingstown","베네수엘라":"Caracas","베트남":"Hanoi","바누아투":"Port Vila","왈리스-푸투나 제도":"Mata-Utu","사모아":"Apia","예멘":"Sana'a","남아프리카공화국":"Pretoria","잠비아":"Lusaka","짐바브웨":"Harare","코소보":"Pristina"};
+const normalizeLocationSearch=value=>String(value||"").trim().toLocaleLowerCase("ko-KR").replace(/[\s._()\-]/g,"");
+function countrySearchText(row){return [row.name,row.en,...(row.aliases||[])].map(normalizeLocationSearch).filter(Boolean)}
+function findCountryMatch(query){
+ const q=normalizeLocationSearch(query);if(!q)return null;
+ const rows=WORLD_COUNTRY_DIRECTORY.map(row=>({row,keys:countrySearchText(row)}));
+ return rows.find(x=>x.keys.some(k=>k===q))?.row||rows.find(x=>x.keys.some(k=>k.startsWith(q)))?.row||rows.find(x=>x.keys.some(k=>k.includes(q)))?.row||null;
+}
+function countryEnglishName(name){return WORLD_COUNTRY_BY_NAME[String(name||"").trim()]?.en||String(name||"").trim()}
+function countryCenterCoord(name){return (PLACE_PRESETS["해외"]||{})[name]||WORLD_COUNTRY_CENTERS[name]||null}
+function worldCitiesForCountry(country,current=""){
+ const base=[...(WORLD_COUNTRY_CITIES[country]||[])];
+ const cap=WORLD_COUNTRY_CAPITALS[country];
+ if(cap&&!base.includes(cap))base.push(cap);
+ if(current&&!base.includes(current))base.push(current);
+ return [...new Set(base.filter(Boolean))];
+}
+function findSelectMatch(select,query){
+ const q=normalizeLocationSearch(query);if(!q)return null;
+ const rows=[...select.options].filter(o=>o.value).map(o=>({o,keys:[o.value,o.textContent].map(normalizeLocationSearch)}));
+ return rows.find(x=>x.keys.some(k=>k===q))?.o||rows.find(x=>x.keys.some(k=>k.startsWith(q)))?.o||rows.find(x=>x.keys.some(k=>k.includes(q)))?.o||null;
+}
+function selectSearchMatch(select,query,{allowCustom=false}={}){
+ const match=findSelectMatch(select,query);
+ if(match){select.value=match.value;return match.value}
+ const raw=String(query||"").trim();
+ if(allowCustom&&raw.length>=2){
+   [...select.options].filter(o=>o.dataset.searchCustom==="1").forEach(o=>o.remove());
+   const o=document.createElement("option");o.value=raw;o.textContent=`직접 입력 · ${raw}`;o.dataset.searchCustom="1";select.appendChild(o);select.value=raw;return raw;
+ }
+ return "";
+}
+const WORLD_GEOCODE_CACHE_KEY="travel_world_geocode_v1";
+let WORLD_GEOCODE_CACHE=(()=>{try{return JSON.parse(localStorage.getItem(WORLD_GEOCODE_CACHE_KEY)||"{}")||{}}catch(_){return {}}})();
+function cachedWorldCoord(country,city){const v=WORLD_GEOCODE_CACHE[`${String(country||"").trim()}|${String(city||"").trim()}`];return Array.isArray(v)&&v.length>=2?v:null}
+function cacheWorldCoord(country,city,coord){if(!Array.isArray(coord)||coord.length<2)return;WORLD_GEOCODE_CACHE[`${String(country||"").trim()}|${String(city||"").trim()}`]=coord;try{localStorage.setItem(WORLD_GEOCODE_CACHE_KEY,JSON.stringify(WORLD_GEOCODE_CACHE))}catch(_){}}
+async function resolveWorldCoord(country,city){
+ const known=worldCityCoord(country,city);if(known)return known;
+ const countryEn=countryEnglishName(country);
+ const query=[city,countryEn].filter(Boolean).join(", ");
+ if(query){
+  try{
+   const url=`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=ko,en&q=${encodeURIComponent(query)}`;
+   const res=await fetch(url,{headers:{"Accept":"application/json"},cache:"no-store"});
+   if(res.ok){const rows=await res.json();const row=rows?.[0];const coord=row?[Number(row.lat),Number(row.lon)]:null;if(coord&&coord.every(Number.isFinite)){cacheWorldCoord(country,city,coord);return coord}}
+  }catch(err){console.warn("World location geocoding failed",err)}
+ }
+ return countryCenterCoord(country);
+}
 const WORLD_COUNTRY_CITIES={
  "일본":["도쿄도","오사카시","교토시","삿포로시","후쿠오카시","나고야시","요코하마시","고베시","나라시","나하시(오키나와)"],
  "중국":["베이징시","상하이시","광저우시","선전시","청두시","시안시","칭다오시","항저우시"],
@@ -204,7 +258,8 @@ const WORLD_CITY_COORDS={
  "마카오|마카오반도":[22.1987,113.5439],"마카오|타이파":[22.1530,113.5580],"마카오|콜로안":[22.1240,113.5590]
 };
 function worldCityCoord(country,city){
- return WORLD_CITY_COORDS[`${String(country||'').trim()}|${String(city||'').trim()}`]||null;
+ const key=`${String(country||'').trim()}|${String(city||'').trim()}`;
+ return WORLD_CITY_COORDS[key]||cachedWorldCoord(country,city)||null;
 }
 
 const KR_REGION_CITIES={
@@ -252,22 +307,27 @@ function populateTripRegions(current=""){
  tripRegionEdit.innerHTML='<option value="">시·도 선택</option>'+Object.keys(KR_REGION_CITIES)
    .map(r=>`<option value="${esc(r)}">${esc(regionLabel(r))}</option>`).join("");
  if(key&&KR_REGION_CITIES[key]) tripRegionEdit.value=key;
+ if(typeof tripRegionSearch!=="undefined"&&tripRegionSearch)tripRegionSearch.value=key?regionLabel(key):"";
 }
 function populateTripCountries(current=""){
- const countries=Object.keys(PLACE_PRESETS["해외"]||{});
+ const countries=[...WORLD_COUNTRY_NAMES];
+ if(current&&!countries.includes(current))countries.unshift(current);
  tripCountryEdit.innerHTML='<option value="">국가 선택</option>'+countries.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
- if(current&&countries.includes(current)) tripCountryEdit.value=current;
+ if(current)tripCountryEdit.value=current;
+ if(typeof tripCountrySearch!=="undefined"&&tripCountrySearch)tripCountrySearch.value=current||"";
 }
 function populateTripCities(region,current=""){
  const domestic=tripTypeEdit.value==="국내";
  const key=domestic?normalizeRegionKey(region):String(region||"").trim();
- const cities=domestic?(KR_REGION_CITIES[key]||[]):(WORLD_COUNTRY_CITIES[key]||[]);
+ const cities=domestic?[...(KR_REGION_CITIES[key]||[])]:worldCitiesForCountry(key,current);
+ if(current&&!cities.includes(current))cities.push(current);
  const optional=domestic&&METRO_REGIONS.has(key);
  tripCityEdit.innerHTML=`<option value="">${optional?"선택 안 함":domestic?"도시 선택":"도시·지역 선택"}</option>`+
    cities.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
- if(current&&cities.includes(current)) tripCityEdit.value=current;
+ if(current)tripCityEdit.value=current;
  tripCityEdit.required=!optional;
  if(typeof tripCityLabel!=="undefined"&&tripCityLabel) tripCityLabel.textContent=domestic?"도시":"해외 도시·지역";
+ if(typeof tripCitySearch!=="undefined"&&tripCitySearch){tripCitySearch.value=current||"";tripCitySearch.placeholder=domestic?"도시·군·구 검색":"도시·지역 검색 또는 직접 입력";}
 }
 function syncTripLocationFields(region="",city="",country=""){
  const domestic=tripTypeEdit.value==="국내";
@@ -285,6 +345,8 @@ function syncTripLocationFields(region="",city="",country=""){
    tripCountryEdit.innerHTML='<option value="대한민국">대한민국</option>';
    tripCountryEdit.value="대한민국";
    tripCountryEdit.disabled=true;
+   if(typeof tripCountrySearch!=="undefined"&&tripCountrySearch){tripCountrySearch.value="대한민국";tripCountrySearch.hidden=true;tripCountrySearch.disabled=true;}
+   if(typeof tripRegionSearch!=="undefined"&&tripRegionSearch){tripRegionSearch.hidden=false;tripRegionSearch.disabled=false;}
    populateTripCities(tripRegionEdit.value,city);
  }else{
    // 해외: 국가를 먼저 고른 뒤 해당 국가의 도시·지역을 선택하도록 순서를 바꿉니다.
@@ -294,7 +356,9 @@ function syncTripLocationFields(region="",city="",country=""){
    }
    tripRegionEdit.required=false;
    tripRegionEdit.innerHTML="";
+   if(typeof tripRegionSearch!=="undefined"&&tripRegionSearch){tripRegionSearch.hidden=true;tripRegionSearch.disabled=true;tripRegionSearch.value="";}
    tripCountryEdit.disabled=false;
+   if(typeof tripCountrySearch!=="undefined"&&tripCountrySearch){tripCountrySearch.hidden=false;tripCountrySearch.disabled=false;}
    populateTripCountries(country);
    populateTripCities(tripCountryEdit.value,city);
  }
@@ -458,17 +522,8 @@ let selectedKoreaRegion="",selectedKoreaCity="",selectedWorldGeoName="";
 const KOREA_MUNICIPALITY_KML_URL="https://cdn.jsdelivr.net/gh/southkorea/southkorea-maps@master/kostat/2013/kml/skorea_municipalities_simple.kml";
 const WORLD_COUNTRY_GEOJSON_URL="https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json";
 
-// 여행지 입력명 ↔ 세계지도 GeoJSON 국가명 매핑
-const WORLD_GEO_NAME_BY_KO={
- "일본":"Japan","중국":"China","대만":"Taiwan","홍콩":"Hong Kong","마카오":"Macao",
- "베트남":"Vietnam","태국":"Thailand","싱가포르":"Singapore","말레이시아":"Malaysia","인도네시아":"Indonesia",
- "필리핀":"Philippines","괌":"Guam","사이판":"Northern Mariana Islands","호주":"Australia","뉴질랜드":"New Zealand",
- "미국":"United States of America","캐나다":"Canada","멕시코":"Mexico","영국":"United Kingdom","프랑스":"France",
- "독일":"Germany","스위스":"Switzerland","이탈리아":"Italy","스페인":"Spain","포르투갈":"Portugal",
- "네덜란드":"Netherlands","벨기에":"Belgium","오스트리아":"Austria","체코":"Czech Republic","헝가리":"Hungary",
- "그리스":"Greece","튀르키예":"Turkey","아랍에미리트":"United Arab Emirates","인도":"India","몰디브":"Maldives",
- "이집트":"Egypt","남아프리카공화국":"South Africa","브라질":"Brazil","아르헨티나":"Argentina"
-};
+// 여행지 입력명 ↔ 세계지도 GeoJSON 국가명 매핑 (전 세계 국가 지원)
+const WORLD_GEO_NAME_BY_KO={...Object.fromEntries(WORLD_COUNTRY_DIRECTORY.map(x=>[x.name,x.en])),...{"미국":"United States of America","대한민국":"South Korea","북한":"North Korea","러시아":"Russia","베트남":"Vietnam","라오스":"Laos","브루나이":"Brunei","이란":"Iran","시리아":"Syria","볼리비아":"Bolivia","베네수엘라":"Venezuela","탄자니아":"Tanzania","몰도바":"Moldova","콩고-킨샤사":"Democratic Republic of the Congo","콩고-브라자빌":"Republic of the Congo","코트디부아르":"Ivory Coast","튀르키예":"Turkey","체코":"Czech Republic","팔레스타인":"Palestine","바티칸 시국":"Vatican","북마리아나 제도":"Northern Mariana Islands","마카오":"Macao","홍콩":"Hong Kong","코소보":"Kosovo"}};
 const WORLD_KO_BY_GEO_NAME=Object.fromEntries(Object.entries(WORLD_GEO_NAME_BY_KO).map(([ko,en])=>[en,ko]));
 const WORLD_GEO_ALIASES={
  "United States":"United States of America","USA":"United States of America","Czechia":"Czech Republic",
@@ -733,7 +788,7 @@ function completedTripPlacePayload(x){
  const country=(x.country|| (type==="국내"?"대한민국":"")).trim();
  const coord=type==="국내"
    ? (KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]||[36.5,127.8])
-   : ((PLACE_PRESETS["해외"]||{})[country]||[0,0]);
+   : (worldCityCoord(country,city)||countryCenterCoord(country)||[0,0]);
  const placeName=type==="국내"?(city||regionLabel(region)||x.title):(country||x.title);
  const sourceMemo=[`지역별 일정 자동등록 · ${x.title}`,x.memo||""].filter(Boolean).join("\n");
  return {
@@ -1098,21 +1153,42 @@ function renderWorld(){
 
 
 function selectedPlaceCities(){
- return [...placeCityEdit.querySelectorAll('input[type="checkbox"]:checked')].map(el=>el.value);
+ const checked=[...placeCityEdit.querySelectorAll('input[type="checkbox"]:checked')].map(el=>el.value);
+ const dropdown=typeof placeCityDropdown!=="undefined"&&placeCityDropdown?String(placeCityDropdown.value||"").trim():"";
+ return [...new Set([...checked,...(dropdown?[dropdown]:[])])];
+}
+function ensurePlaceCityOption(city,checked=true){
+ city=String(city||"").trim();if(!city)return;
+ let input=[...placeCityEdit.querySelectorAll('input[type="checkbox"]')].find(el=>el.value===city);
+ if(!input){
+  const label=document.createElement("label");label.className="multi-city-option";
+  label.innerHTML=`<input type="checkbox" value="${esc(city)}"/><span>${esc(city)}</span>`;placeCityEdit.appendChild(label);input=label.querySelector("input");
+ }
+ if(checked)input.checked=true;
+ if(typeof placeCityDropdown!=="undefined"&&placeCityDropdown&&!([...placeCityDropdown.options].some(o=>o.value===city))){const o=document.createElement("option");o.value=city;o.textContent=`직접 입력 · ${city}`;placeCityDropdown.appendChild(o)}
+ if(typeof placeCityDropdown!=="undefined"&&placeCityDropdown)placeCityDropdown.value=city;
 }
 function populatePlaceCities(parent,current=[]){
  const domestic=placeTypeEdit.value==="국내";
- const cities=domestic?(KR_REGION_CITIES[parent]||[]):(WORLD_COUNTRY_CITIES[parent]||[]);
  const selected=new Set(Array.isArray(current)?current:(current?[current]:[]));
+ const cities=domestic?[...(KR_REGION_CITIES[parent]||[])]:worldCitiesForCountry(parent,[...selected][0]||"");
+ selected.forEach(c=>{if(c&&!cities.includes(c))cities.push(c)});
  placeCityEdit.innerHTML=cities.map(c=>`<label class="multi-city-option"><input type="checkbox" value="${esc(c)}" ${selected.has(c)?"checked":""}/><span>${esc(c)}</span></label>`).join("");
+ if(typeof placeCityDropdown!=="undefined"&&placeCityDropdown){
+   placeCityDropdown.innerHTML=`<option value="">${domestic?"지역 드롭박스 선택":"도시·지역 드롭박스 선택"}</option>`+cities.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join("");
+   const first=[...selected][0];if(first)placeCityDropdown.value=first;
+ }
+ if(typeof placeCitySearch!=="undefined"&&placeCitySearch){placeCitySearch.value="";placeCitySearch.placeholder=domestic?"도시·군·구 검색":"도시·지역 검색 또는 직접 입력";}
  placeCityWrap.hidden=false;
- if(typeof placeCityLabel!=="undefined"&&placeCityLabel)placeCityLabel.textContent=domestic?"도시·군·구":"해외 도시·지역";
- const help=placeCityWrap.querySelector('.multi-city-help');if(help)help.textContent=domestic?"여러 지역을 방문했다면 복수 선택할 수 있습니다.":"한 국가에서 여러 도시를 방문했다면 복수 선택할 수 있습니다.";
+ if(typeof placeCityLabel!=="undefined"&&placeCityLabel) placeCityLabel.textContent=domestic?"도시·군·구":"해외 도시·지역";
+ const help=placeCityWrap.querySelector('.multi-city-help');if(help)help.textContent=domestic?"검색 또는 드롭박스로 지역을 선택할 수 있고, 여러 지역은 복수 선택할 수 있습니다.":"검색 또는 드롭박스로 도시·지역을 선택할 수 있으며, 목록에 없으면 검색어를 직접 입력할 수 있습니다.";
 }
 function populatePlaceNames(type,current="",currentCities=[]){
- const names=Object.keys(PLACE_PRESETS[type]||{});
- placeNameEdit.innerHTML=names.map(n=>`<option value="${esc(n)}">${esc(type==="국내"?regionLabel(n):n)}</option>`).join("");
- if(current&&names.includes(current)) placeNameEdit.value=current;
+ const names=type==="국내"?Object.keys(KR_REGION_CITIES):[...WORLD_COUNTRY_NAMES];
+ if(current&&!names.includes(current))names.unshift(current);
+ placeNameEdit.innerHTML='<option value="">'+(type==="국내"?'시·도 선택':'국가 선택')+'</option>'+names.map(n=>`<option value="${esc(n)}">${esc(type==="국내"?regionLabel(n):n)}</option>`).join("");
+ if(current)placeNameEdit.value=current;
+ if(typeof placeNameSearch!=="undefined"&&placeNameSearch){placeNameSearch.value=current?(type==="국내"?regionLabel(current):current):"";placeNameSearch.placeholder=type==="국내"?"시·도 검색":"국가 검색 (예: 일본, Japan)";}
  populatePlaceCities(placeNameEdit.value,currentCities);
 }
 function renderPlaces(){
@@ -1152,9 +1228,16 @@ function editPlace(id){
  placeModalTitle.textContent="방문지 수정";deletePlaceBtn.hidden=false;openModal("placeModal");
 }
 placeTypeEdit.onchange=()=>populatePlaceNames(placeTypeEdit.value);
-placeNameEdit.onchange=()=>populatePlaceCities(placeNameEdit.value);
+placeNameEdit.onchange=()=>{if(typeof placeNameSearch!=="undefined"&&placeNameSearch)placeNameSearch.value=placeTypeEdit.value==="국내"?regionLabel(placeNameEdit.value):placeNameEdit.value;populatePlaceCities(placeNameEdit.value)};
+if(typeof placeNameSearch!=="undefined"&&placeNameSearch){placeNameSearch.addEventListener("input",()=>{const q=placeNameSearch.value.trim();let value="";if(placeTypeEdit.value==="해외"){const match=findCountryMatch(q);value=match?.name||""}else{const match=findSelectMatch(placeNameEdit,q);value=match?.value||""}if(value&&placeNameEdit.value!==value){placeNameEdit.value=value;populatePlaceCities(value)}})}
+if(typeof placeCitySearch!=="undefined"&&placeCitySearch){
+ placeCitySearch.addEventListener("input",()=>{const known=findSelectMatch(placeCityDropdown,placeCitySearch.value);if(known){placeCityDropdown.value=known.value;ensurePlaceCityOption(known.value,true)}else selectSearchMatch(placeCityDropdown,placeCitySearch.value,{allowCustom:placeTypeEdit.value==="해외"})});
+ placeCitySearch.addEventListener("change",()=>{const value=selectSearchMatch(placeCityDropdown,placeCitySearch.value,{allowCustom:placeTypeEdit.value==="해외"});if(value)ensurePlaceCityOption(value,true)});
+ placeCitySearch.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();const value=selectSearchMatch(placeCityDropdown,placeCitySearch.value,{allowCustom:placeTypeEdit.value==="해외"});if(value)ensurePlaceCityOption(value,true)}});
+}
+if(typeof placeCityDropdown!=="undefined"&&placeCityDropdown)placeCityDropdown.onchange=()=>{if(placeCityDropdown.value){ensurePlaceCityOption(placeCityDropdown.value,true);if(typeof placeCitySearch!=="undefined"&&placeCitySearch)placeCitySearch.value=placeCityDropdown.value}};
 placeCitySelectAll.onclick=()=>placeCityEdit.querySelectorAll('input[type="checkbox"]').forEach(el=>el.checked=true);
-placeCityClear.onclick=()=>placeCityEdit.querySelectorAll('input[type="checkbox"]').forEach(el=>el.checked=false);
+placeCityClear.onclick=()=>{placeCityEdit.querySelectorAll('input[type="checkbox"]').forEach(el=>el.checked=false);if(typeof placeCityDropdown!=="undefined"&&placeCityDropdown)placeCityDropdown.value="";if(typeof placeCitySearch!=="undefined"&&placeCitySearch)placeCitySearch.value=""};
 placeFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("placeFormPublic");
  const existing=placeEditId.value;const id=existing?Number(existing):null;
@@ -1164,8 +1247,8 @@ placeFormPublic.onsubmit=async e=>{
  if(!cities.length){showFormError("placeFormPublic",new Error(type==="국내"?"방문한 도시·군·구를 하나 이상 선택해 주세요.":"방문한 해외 도시·지역을 하나 이상 선택해 주세요."));return}
  const city=cities[0]||"";
  const name=type==="국내"?(city||region):placeNameEdit.value;
- const coord=type==="국내"?(KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]):(worldCityCoord(name,city)||(PLACE_PRESETS["해외"]||{})[name]);
- if(!coord)return;
+ const coord=type==="국내"?(KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]):await resolveWorldCoord(name,city);
+ if(!coord){showFormError("placeFormPublic",new Error("선택한 해외 도시·지역의 위치를 확인할 수 없습니다. 도시명을 조금 더 정확하게 입력해 주세요."));return}
  const now=new Date().toISOString();
  const startDate=placeStartEdit.value||null,endDate=placeEndEdit.value||startDate;
  if(startDate&&endDate&&endDate<startDate){showFormError("placeFormPublic",new Error("종료일은 방문/계획일보다 빠를 수 없습니다."));return}
@@ -1241,8 +1324,15 @@ function editTrip(id){
  tripModalTitle.textContent="여행 수정";deleteTripBtn.hidden=false;openModal("tripModal");
 }
 tripTypeEdit.onchange=()=>syncTripLocationFields("","",tripTypeEdit.value==="국내"?"대한민국":"");
-tripRegionEdit.onchange=()=>populateTripCities(tripRegionEdit.value,"");
-tripCountryEdit.onchange=()=>{if(tripTypeEdit.value==="해외")populateTripCities(tripCountryEdit.value,"")};
+tripRegionEdit.onchange=()=>{if(typeof tripRegionSearch!=="undefined"&&tripRegionSearch)tripRegionSearch.value=regionLabel(tripRegionEdit.value);populateTripCities(tripRegionEdit.value,"")};
+tripCountryEdit.onchange=()=>{if(typeof tripCountrySearch!=="undefined"&&tripCountrySearch)tripCountrySearch.value=tripCountryEdit.value;if(tripTypeEdit.value==="해외")populateTripCities(tripCountryEdit.value,"")};
+tripCityEdit.onchange=()=>{if(typeof tripCitySearch!=="undefined"&&tripCitySearch)tripCitySearch.value=tripCityEdit.value};
+if(typeof tripCountrySearch!=="undefined"&&tripCountrySearch)tripCountrySearch.addEventListener("input",()=>{const match=findCountryMatch(tripCountrySearch.value);if(match&&tripCountryEdit.value!==match.name){tripCountryEdit.value=match.name;populateTripCities(match.name,"")}});
+if(typeof tripRegionSearch!=="undefined"&&tripRegionSearch)tripRegionSearch.addEventListener("input",()=>{const match=findSelectMatch(tripRegionEdit,tripRegionSearch.value);if(match&&tripRegionEdit.value!==match.value){tripRegionEdit.value=match.value;populateTripCities(match.value,"")}});
+if(typeof tripCitySearch!=="undefined"&&tripCitySearch){
+ tripCitySearch.addEventListener("input",()=>selectSearchMatch(tripCityEdit,tripCitySearch.value,{allowCustom:tripTypeEdit.value==="해외"}));
+ tripCitySearch.addEventListener("change",()=>selectSearchMatch(tripCityEdit,tripCitySearch.value,{allowCustom:tripTypeEdit.value==="해외"}));
+}
 tripFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("tripFormPublic");
  const existing=tripEditId.value;const id=existing?Number(existing):null;
@@ -1254,7 +1344,8 @@ tripFormPublic.onsubmit=async e=>{
  if(tripTypeEdit.value==="국내"&&!tripRegion){showFormError("tripFormPublic",new Error("국내 지역을 선택해 주세요."));return}
  if(tripTypeEdit.value==="국내"&&!METRO_REGIONS.has(tripRegion)&&!tripCity){showFormError("tripFormPublic",new Error("도시를 선택해 주세요."));return}
  if(tripTypeEdit.value==="해외"&&!tripCountry){showFormError("tripFormPublic",new Error("국가를 선택해 주세요."));return}
- if(tripTypeEdit.value==="해외"&&!tripCity){showFormError("tripFormPublic",new Error("해외 도시·지역을 선택해 주세요."));return}
+ if(tripTypeEdit.value==="해외"&&!tripCity){showFormError("tripFormPublic",new Error("해외 도시·지역을 선택하거나 검색어로 직접 입력해 주세요."));return}
+ if(tripTypeEdit.value==="해외"&&tripCity)await resolveWorldCoord(tripCountry,tripCity);
  const p={trip_type:tripTypeEdit.value,status:tripStatusEdit.value,title:tripTitleEdit.value.trim(),start_date:tripStart,end_date:tripEnd,region:tripRegion,city:tripCity,country:tripCountry,memo:tripMemoEdit.value.trim(),author_name:tripAuthorEdit.value.trim(),is_visible:true,updated_at:new Date().toISOString()};
  try{
   const saved=(id&&id>0)?await apiData("travel_trips","PUT",p,id):await apiData("travel_trips","POST",p);
