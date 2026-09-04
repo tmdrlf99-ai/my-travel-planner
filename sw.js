@@ -1,4 +1,4 @@
-const CACHE_NAME="mtp-pwa-v6-0-34-calendar-multiselect";
+const CACHE_NAME="mtp-pwa-v6-0-35-region-count";
 const APP_SHELL=[
   "/",
   "/index.html",

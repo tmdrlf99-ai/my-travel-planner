@@ -1305,7 +1305,15 @@ function populatePlaceNames(type,current="",currentCities=[]){
  populatePlaceCities(placeNameEdit.value,currentCities);
 }
 function renderPlaces(){
- const domesticCount=status=>new Set(places.filter(x=>x.place_type==="국내"&&x.status===status).flatMap(x=>{const region=normalizeRegionKey(x.region_name||"");const cities=placeCities(x);return cities.length?cities.map(c=>`${region}::${c}`):[x.place_name||region].filter(Boolean)})).size;
+ const domesticCount=status=>new Set(
+ places.filter(x=>x.place_type==="국내"&&x.status===status).map(x=>{
+  const region=normalizeRegionKey(x.region_name||"");
+  const legacy=normalizeRegionKey(String(x.place_name||"").trim());
+  if(region)return region;
+  if(legacy)return legacy;
+  return String(x.place_name||"").trim();
+ }).filter(Boolean)
+).size;
  const dv=domesticCount("방문");
  const db=domesticCount("버킷리스트");
  const overseasCount=status=>new Set(places.filter(x=>x.place_type==="해외"&&x.status===status).flatMap(x=>{const cities=placeCities(x);return cities.length?cities.map(c=>`${x.place_name}::${c}`):[x.place_name].filter(Boolean)})).size;
