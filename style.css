@@ -1991,3 +1991,65 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
   .site-auth-input-row button{width:100%}
   .site-lock-btn{padding:0 9px}
 }
+
+
+/* ===== v6.0.29 CALENDAR MONTH CONTRAST ===== */
+/* 현재 월과 이전/다음 월을 더 명확하게 구분 */
+
+/* 현재 월은 선명하게 유지 */
+.calendar-grid .day:not(.other){
+  opacity:1 !important;
+}
+
+/* 이전/다음 월 영역은 확실한 회색 배경으로 통일 */
+.calendar-grid .day.other,
+.calendar-grid .day.other.sunday,
+.calendar-grid .day.other.saturday,
+.calendar-grid .day.other.holiday{
+  background:#f1f4f5 !important;
+  box-shadow:inset 0 0 0 999px rgba(241,244,245,.28) !important;
+}
+
+/* 다른 달 날짜 숫자도 한 단계 더 흐리게 */
+.calendar-grid .day.other:not(.sunday):not(.saturday):not(.holiday) > span:first-child{
+  color:#b7c1c7 !important;
+}
+.calendar-grid .day.other.sunday > span:first-child,
+.calendar-grid .day.other.holiday > span:first-child{
+  color:#d8a2a2 !important;
+}
+.calendar-grid .day.other.saturday:not(.holiday) > span:first-child{
+  color:#9fb7d5 !important;
+}
+
+/* 다른 달의 공휴일명·여행 위치·이벤트 점도 함께 흐리게 */
+.calendar-grid .day.other .holiday-name{
+  color:#c7a5a5 !important;
+  opacity:.72 !important;
+}
+.calendar-grid .day.other .day-location{
+  opacity:.34 !important;
+}
+.calendar-grid .day.other.has-event:after{
+  opacity:.38 !important;
+}
+
+/* 마우스를 올려도 현재 월처럼 강하게 보이지 않도록 */
+.calendar-grid .day.other:hover{
+  background:#edf1f2 !important;
+  box-shadow:inset 0 0 0 1px #d9e1e4 !important;
+}
+
+/* 현재 월과 다른 월 경계가 눈에 들어오도록 */
+.calendar-grid .day.other{
+  border-color:#e5eaed !important;
+}
+
+@media(max-width:720px){
+  .calendar-grid .day.other,
+  .calendar-grid .day.other.sunday,
+  .calendar-grid .day.other.saturday,
+  .calendar-grid .day.other.holiday{
+    background:#f0f3f4 !important;
+  }
+}
