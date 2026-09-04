@@ -854,17 +854,43 @@ async function autoArchiveCompletedTrips(){
 }
 function renderAll(){renderHero();renderUpcoming();renderCalendar();renderKorea();renderWorld();renderPlaces();renderBoard();renderBudgetOptions();renderBudget();fillEditTripSelects()}
 function renderHero(){
- const now=new Date(),future=trips.filter(x=>x.start_date&&new Date(x.start_date+"T00:00:00")>=new Date(now.toDateString())).sort((a,b)=>a.start_date.localeCompare(b.start_date));
+ const now=new Date(),today=fmt(now),currentYear=now.getFullYear();
+ const yearStart=`${currentYear}-01-01`,yearEnd=`${currentYear}-12-31`;
+ const rangeTouchesYear=(start,end)=>{
+   if(!start&&!end)return false;
+   const s=start||end,e=end||start;
+   return s<=yearEnd&&e>=yearStart;
+ };
+ const visitedByToday=(start,end)=>{
+   const s=start||end;
+   return Boolean(s&&s<=today);
+ };
+
+ const future=trips.filter(x=>x.start_date&&new Date(x.start_date+"T00:00:00")>=new Date(now.toDateString())).sort((a,b)=>a.start_date.localeCompare(b.start_date));
  const next=future[0];
  sideNextTrip.textContent=next?.title||"아직 예정 여행이 없습니다";
  sideNextDates.textContent=next?`${next.start_date} ~ ${next.end_date||next.start_date}`:"새 여행을 등록해 보세요.";
  if(next){const d=Math.ceil((new Date(next.start_date+"T00:00:00")-new Date(now.toDateString()))/86400000);sideNextDday.textContent=d>=0?`D-${d}`:"여행중"}else sideNextDday.textContent="READY";
- statTrips.textContent=trips.length;
- // 방문 지역은 시·군·구 개수가 아니라 상위 시·도 기준으로 집계합니다.
- // 예: 서울 종로구·마포구·영등포구를 모두 방문해도 "서울" 1개 지역으로 계산합니다.
+
+ // '올해의 여행 기록'은 현재 연도에 실제 방문한 기록만 집계합니다.
+ // 예정/버킷리스트/과거 연도 자료는 제외합니다.
+ const completedYearTrips=trips.filter(x=>
+   x.status==="완료" &&
+   rangeTouchesYear(x.start_date,x.end_date) &&
+   visitedByToday(x.start_date,x.end_date)
+ );
+ const visitedYearPlaces=places.filter(x=>
+   x.status==="방문" &&
+   rangeTouchesYear(x.start_date,x.end_date) &&
+   visitedByToday(x.start_date,x.end_date)
+ );
+
+ statTrips.textContent=completedYearTrips.length;
+
+ // 국내 방문 지역은 시·군·구 개수가 아니라 상위 시·도 기준으로 집계합니다.
  const domesticVisitedRegions=new Set(
-   places
-     .filter(x=>x.place_type==="국내"&&x.status==="방문")
+   visitedYearPlaces
+     .filter(x=>x.place_type==="국내")
      .map(x=>{
        const region=normalizeRegionKey(x.region_name||"");
        const legacy=normalizeRegionKey(String(x.place_name||"").trim());
@@ -872,19 +898,36 @@ function renderHero(){
      })
      .filter(region=>region&&KR_REGION_CITIES[region])
  );
- trips.filter(x=>x.trip_type==="국내"&&x.status==="완료").forEach(x=>{
+ completedYearTrips.filter(x=>x.trip_type==="국내").forEach(x=>{
    const region=normalizeRegionKey(x.region||"");
    if(region&&KR_REGION_CITIES[region])domesticVisitedRegions.add(region);
  });
  statCities.textContent=domesticVisitedRegions.size;
 
  const visitedCountries=new Set(
-   places.filter(x=>x.place_type==="해외"&&x.status==="방문").map(x=>x.place_name).filter(Boolean)
+   visitedYearPlaces
+     .filter(x=>x.place_type==="해외")
+     .map(x=>String(x.place_name||"").trim())
+     .filter(Boolean)
  );
- trips.filter(x=>x.trip_type==="해외"&&x.status==="완료").forEach(x=>{if(x.country)visitedCountries.add(x.country)});
+ completedYearTrips.filter(x=>x.trip_type==="해외").forEach(x=>{
+   const country=String(x.country||"").trim();
+   if(country)visitedCountries.add(country);
+ });
  statCountries.textContent=visitedCountries.size;
- const total=budgets.reduce((s,x)=>s+Number(x.budget_amount||0),0),spent=budgets.reduce((s,x)=>s+Number(x.spent_amount||0),0),rate=total?Math.round(spent/total*100):0;
- heroBudget.textContent=money(total);heroBudgetDetail.textContent=`지출 ${money(spent)} / ${rate}%`;budgetProgress.style.width=Math.min(rate,100)+"%";
+
+ // 예산도 올해 실제 완료 여행에 연결된 항목만 표시합니다.
+ const completedTripIds=new Set(completedYearTrips.map(x=>Number(x.id)).filter(Boolean));
+ const yearBudgets=budgets.filter(x=>completedTripIds.has(Number(x.trip_id)));
+ const total=yearBudgets.reduce((s,x)=>s+Number(x.budget_amount||0),0);
+ const spent=yearBudgets.reduce((s,x)=>s+Number(x.spent_amount||0),0);
+ const rate=total?Math.round(spent/total*100):0;
+ heroBudget.textContent=money(total);
+ heroBudgetDetail.textContent=`지출 ${money(spent)} / ${rate}%`;
+ budgetProgress.style.width=Math.min(rate,100)+"%";
+
+ const summaryTitle=document.querySelector(".hero-summary h3");
+ if(summaryTitle)summaryTitle.textContent=`${currentYear}년 여행 기록`;
 }
 function renderUpcoming(){
  const now=new Date(),future=trips.filter(x=>x.start_date&&new Date(x.start_date+"T00:00:00")>=new Date(now.toDateString())).slice(0,4);
