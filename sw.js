@@ -1,4 +1,4 @@
-const CACHE_NAME="mtp-pwa-v6-0-33-northeast-asia-map";
+const CACHE_NAME="mtp-pwa-v6-0-34-calendar-multiselect";
 const APP_SHELL=[
   "/",
   "/index.html",

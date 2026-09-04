@@ -115,7 +115,43 @@ function startAutoSync(){
 }
 
 let trips=[],events=[],budgets=[],regions=[],worldPlaces=[],places=[];
-let cal=new Date(),selectedDate="",selectedBudgetTrip="";
+let cal=new Date(),selectedDate="",selectedDates=new Set(),lastCalendarAnchor="",selectedBudgetTrip="";
+
+function selectedCalendarDates(){
+ const dates=[...selectedDates].filter(Boolean).sort();
+ if(!dates.length&&selectedDate)dates.push(selectedDate);
+ return dates;
+}
+function calendarDateSequence(a,b){
+ if(!a||!b)return [];
+ let start=new Date(a+"T00:00:00"),end=new Date(b+"T00:00:00");
+ if(start>end)[start,end]=[end,start];
+ const out=[];
+ for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1))out.push(fmt(d));
+ return out;
+}
+function handleCalendarDateClick(event,date){
+ hideCalendarHoverTooltip();
+ if(event.shiftKey){
+   const anchor=lastCalendarAnchor||selectedDate||date;
+   if(!(event.ctrlKey||event.metaKey))selectedDates.clear();
+   calendarDateSequence(anchor,date).forEach(d=>selectedDates.add(d));
+   selectedDate=date;
+   lastCalendarAnchor=date;
+ }else if(event.ctrlKey||event.metaKey){
+   if(selectedDates.has(date))selectedDates.delete(date);else selectedDates.add(date);
+   selectedDate=selectedDates.has(date)?date:([...selectedDates].sort().at(-1)||"");
+   lastCalendarAnchor=date;
+ }else{
+   if(selectedDates.size===1&&selectedDates.has(date)){
+     selectedDates.clear();selectedDate="";lastCalendarAnchor="";
+   }else{
+     selectedDates.clear();selectedDates.add(date);selectedDate=date;lastCalendarAnchor=date;
+   }
+ }
+ renderCalendar();
+}
+
 
 
 const PLACE_PRESETS={
@@ -1054,7 +1090,7 @@ function renderCalendar(){
      "day",
      d.getMonth()!==m?"other":"",
      k===today?"today":"",
-     k===selectedDate?"selected":"",
+     (selectedDates.has(k)||k===selectedDate)?"selected":"",
      has?"has-event":"",
      dow===0?"sunday":"",
      dow===6?"saturday":"",
@@ -1065,7 +1101,7 @@ function renderCalendar(){
  }
  calendarGrid.innerHTML=html;
  $$(".day").forEach(b=>{
-  b.onclick=()=>{hideCalendarHoverTooltip();selectedDate=selectedDate===b.dataset.date?"":b.dataset.date;renderCalendar()};
+  b.onclick=e=>handleCalendarDateClick(e,b.dataset.date);
   b.addEventListener("mouseenter",()=>showCalendarHoverTooltip(b,b.dataset.date));
   b.addEventListener("mouseleave",hideCalendarHoverTooltip);
   b.addEventListener("focus",()=>showCalendarHoverTooltip(b,b.dataset.date));
@@ -1438,20 +1474,70 @@ deleteTripBtn.onclick=async()=>{
  try{if(id>0)await apiData("travel_trips","DELETE",null,id);localDelete("trips",id);closeModal("tripModal");toast("여행이 삭제·동기화되었습니다.");await loadAll()}catch(err){showFormError("tripFormPublic",err)}
 }
 
+async function syncCalendarEventToTravelRecords(tripId,dates,eventPayload){
+ const sourceTrip=trips.find(x=>Number(x.id)===Number(tripId));
+ if(!sourceTrip||!dates.length)return;
+ const today=fmt(new Date());
+ const ordered=[...new Set(dates)].sort();
+ const pastDates=ordered.filter(d=>d<today);
+ const currentFutureDates=ordered.filter(d=>d>=today);
+
+ // 오늘/미래 일정은 연결 여행의 기간을 확장하여 '지역별 일정'에 즉시 반영합니다.
+ if(currentFutureDates.length&&Number(sourceTrip.id)>0){
+   const first=currentFutureDates[0],last=currentFutureDates.at(-1);
+   const nextStart=!sourceTrip.start_date||first<sourceTrip.start_date?first:sourceTrip.start_date;
+   const nextEnd=!sourceTrip.end_date||last>sourceTrip.end_date?last:sourceTrip.end_date;
+   const nextStatus=sourceTrip.status==="버킷리스트"?"버킷리스트":"예정";
+   if(nextStart!==sourceTrip.start_date||nextEnd!==sourceTrip.end_date||nextStatus!==sourceTrip.status){
+     const payload={...sourceTrip,start_date:nextStart,end_date:nextEnd,status:nextStatus,updated_at:new Date().toISOString()};
+     const saved=await apiData("travel_trips","PUT",payload,sourceTrip.id);
+     if(saved){localUpsert("trips",saved);Object.assign(sourceTrip,saved)}
+   }
+ }
+
+ // 과거 일정은 연결 여행의 위치정보를 이용해 '방문지 관리'에 방문 기록으로 반영합니다.
+ if(pastDates.length&&Number(sourceTrip.id)>0){
+   const first=pastDates[0],last=pastDates.at(-1);
+   const linked=places.find(p=>isTripLinkedPlace(p)&&Number(p.source_trip_id)===Number(sourceTrip.id));
+   const base=completedTripPlacePayload(sourceTrip);
+   const memoParts=[
+     cleanAutoRegisteredMemo(linked?.memo||sourceTrip.memo||""),
+     eventPayload.title||"",
+     eventPayload.description||""
+   ].map(v=>String(v||"").trim()).filter((v,i,a)=>v&&a.indexOf(v)===i);
+   if(linked&&Number(linked.id)>0){
+     const start=!linked.start_date||first<linked.start_date?first:linked.start_date;
+     const end=!linked.end_date||last>linked.end_date?last:linked.end_date;
+     const payload={...linked,status:"방문",start_date:start,end_date:end,author_name:eventPayload.author_name||linked.author_name||sourceTrip.author_name||"",memo:memoParts.join(" · "),updated_at:new Date().toISOString()};
+     const saved=await apiData("travel_places","PUT",payload,linked.id);
+     if(saved){localUpsert("places",saved);Object.assign(linked,saved)}
+   }else{
+     const payload={...base,start_date:first,end_date:last,author_name:eventPayload.author_name||base.author_name,memo:memoParts.join(" · "),created_at:new Date().toISOString()};
+     const saved=await apiData("travel_places","POST",payload);
+     if(saved){localUpsert("places",saved);places.unshift(saved)}
+   }
+ }
+}
+
 /* 일정 CRUD */
 function resetEventForm(){
  eventFormPublic.reset();
  eventEditId.value="";
  deleteEventBtn.hidden=true;
- eventModalTitle.textContent="일정 추가";
+ const picked=selectedCalendarDates();
+ eventModalTitle.textContent=picked.length>1?`일정 추가 · ${picked.length}일 선택`:"일정 추가";
  eventCategoryEdit.value="일정";
- const baseDate=selectedDate||fmt(new Date());
+ const baseDate=picked[0]||fmt(new Date());
  eventDateEdit.value=baseDate;
- eventEndDateEdit.value=baseDate;
+ eventEndDateEdit.value=picked.at(-1)||baseDate;
+ // 선택 날짜와 겹치는 여행이 하나뿐이면 자동 연결합니다.
+ const matchingTrips=trips.filter(x=>picked.some(d=>tripOnDate(x,d)));
+ if(matchingTrips.length===1)eventTripEdit.value=String(matchingTrips[0].id);
 }
 function newEvent(){resetEventForm();openModal("eventModal")}
 function editEvent(id){
  const x=events.find(v=>v.id===id);if(!x)return;
+ selectedDates.clear();selectedDate=eventStartDate(x);lastCalendarAnchor=selectedDate;
  eventEditId.value=x.id;
  eventTripEdit.value=x.trip_id||"";
  eventDateEdit.value=eventStartDate(x);
@@ -1467,14 +1553,15 @@ function editEvent(id){
 eventFormPublic.onsubmit=async e=>{
  e.preventDefault();clearFormError("eventFormPublic");
  const existing=eventEditId.value;const id=existing?Number(existing):null;
- const startDate=eventDateEdit.value;
- const endDate=eventEndDateEdit.value||startDate;
+ const tripId=eventTripEdit.value?Number(eventTripEdit.value):null;
+ if(!existing&&!tripId){showFormError("eventFormPublic","지역별 일정/방문지 자동 반영을 위해 연결 여행을 선택해 주세요.");return;}
+ const picked=!existing?selectedCalendarDates():[];
+ const multi=!existing&&picked.length>1;
+ const startDate=multi?picked[0]:eventDateEdit.value;
+ const endDate=multi?picked.at(-1):(eventEndDateEdit.value||startDate);
  if(endDate<startDate){showFormError("eventFormPublic","마지막 복귀 일자는 시작 일자보다 빠를 수 없습니다.");return;}
- const p={
-  trip_id:eventTripEdit.value?Number(eventTripEdit.value):null,
-  event_date:startDate,
-  start_date:startDate,
-  end_date:endDate,
+ const basePayload={
+  trip_id:tripId,
   category:eventCategoryEdit.value.trim()||"일정",
   title:eventTitleEdit.value.trim(),
   description:eventDescEdit.value.trim(),
@@ -1483,9 +1570,30 @@ eventFormPublic.onsubmit=async e=>{
   updated_at:new Date().toISOString()
  };
  try{
-  const saved=(id&&id>0)?await apiData("travel_events","PUT",p,id):await apiData("travel_events","POST",p);
-  if(id)localDelete("events",id);if(saved)localUpsert("events",saved);selectedDate=startDate;
-  closeModal("eventModal");toast(existing?"일정이 수정·동기화되었습니다.":"일정이 저장·동기화되었습니다.");await loadAll();
+  if(id&&id>0){
+    const p={...basePayload,event_date:startDate,start_date:startDate,end_date:endDate};
+    const saved=await apiData("travel_events","PUT",p,id);
+    localDelete("events",id);if(saved)localUpsert("events",saved);
+    if(tripId)await syncCalendarEventToTravelRecords(tripId,calendarDateSequence(startDate,endDate),p);
+    selectedDates.clear();selectedDates.add(startDate);selectedDate=startDate;lastCalendarAnchor=startDate;
+  }else if(multi){
+    for(const date of picked){
+      const p={...basePayload,event_date:date,start_date:date,end_date:date};
+      const saved=await apiData("travel_events","POST",p);
+      if(saved)localUpsert("events",saved);
+    }
+    await syncCalendarEventToTravelRecords(tripId,picked,basePayload);
+    selectedDate=picked.at(-1);lastCalendarAnchor=selectedDate;
+  }else{
+    const p={...basePayload,event_date:startDate,start_date:startDate,end_date:endDate};
+    const saved=await apiData("travel_events","POST",p);
+    if(saved)localUpsert("events",saved);
+    await syncCalendarEventToTravelRecords(tripId,calendarDateSequence(startDate,endDate),p);
+    selectedDates.clear();selectedDates.add(startDate);selectedDate=startDate;lastCalendarAnchor=startDate;
+  }
+  closeModal("eventModal");
+  toast(existing?"일정이 수정·동기화되었습니다.":multi?`선택한 ${picked.length}개 날짜에 일정이 저장·반영되었습니다.`:"일정이 저장되고 여행 기록에 반영되었습니다.");
+  await loadAll();
  }catch(err){showFormError("eventFormPublic",err)}
 }
 deleteEventBtn.onclick=async()=>{
