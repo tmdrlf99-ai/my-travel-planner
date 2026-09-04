@@ -1,0 +1,68 @@
+{
+  "id": "/",
+  "name": "MY TRAVEL PLANNER",
+  "short_name": "TRAVEL",
+  "description": "여행 일정, 방문지, 지도, 예산을 하나로 관리하는 개인 여행 플래너",
+  "lang": "ko",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f7faf9",
+  "theme_color": "#258e75",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "여행 달력",
+      "short_name": "달력",
+      "url": "/#calendar",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "지역별 일정",
+      "short_name": "일정",
+      "url": "/#board",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "여행 예산",
+      "short_name": "예산",
+      "url": "/#budget",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

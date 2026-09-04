@@ -4,6 +4,17 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>My Travel Planner</title>
+  <meta name="theme-color" content="#258e75"/>
+  <meta name="application-name" content="MY TRAVEL PLANNER"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="TRAVEL"/>
+  <link rel="manifest" href="/manifest.webmanifest"/>
+  <link rel="shortcut icon" href="/favicon.ico"/>
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"/>
   <link rel="stylesheet" href="style.css"/>
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"/>
 </head>
@@ -358,10 +369,12 @@
   </form>
 </section>
 
+<button id="installPwaBtn" class="pwa-install-btn" type="button" hidden>📲 앱 설치</button>
 <div id="toast" class="toast" hidden></div>
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="app.js"></script>
+<script src="pwa.js"></script>
 </body>
 </html>
