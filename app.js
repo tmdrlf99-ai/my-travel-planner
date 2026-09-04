@@ -677,7 +677,7 @@ function showKoreaMunicipality(region,city){
  koreaTripList.classList.add('map-region-list');
  const cards=[];
  tripRows.forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.title)}</b><small>${esc(x.start_date||'')}${x.end_date?` ~ ${esc(x.end_date)}`:''}${x.memo?` · ${esc(cleanAutoRegisteredMemo(x.memo))}`:''}</small></div><span class="map-list-status ${x.status==='완료'?'visited':x.status==='버킷리스트'?'bucket':'none'}">${esc(x.status||'예정')}</span></div>`));
- placeRows.filter(x=>!x.source_trip_id).forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(selectedKoreaCity)}</b><small>${esc(x.memo||'직접 등록한 방문지')}</small></div><span class="map-list-status ${x.status==='방문'?'visited':'bucket'}">${esc(x.status)}</span></div>`));
+ placeRows.filter(x=>!isTripLinkedPlace(x)).forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(selectedKoreaCity)}</b><small>${esc(x.memo||'직접 등록한 방문지')}</small></div><span class="map-list-status ${x.status==='방문'?'visited':'bucket'}">${esc(x.status)}</span></div>`));
  koreaTripList.innerHTML=cards.length?cards.join(''):'<div class="empty-mini">이 지역에 등록된 여행 또는 방문지 기록이 없습니다.</div>';
 }
 function showWorldCountry(geoName){
@@ -699,7 +699,7 @@ function showWorldCountry(geoName){
  worldDesc.textContent=`${countrySummary} · 등록 도시/지역 ${recordedCities.length}곳 · 여행 ${tripRows.length}건 · 방문지 기록 ${placeRows.length}건`;
  recordedCities.forEach(city=>{const st=cityStatus.get(city)||'예정';cards.push(`<div class="map-region-item"><div><b>${esc(city)}</b><small>${esc(ko)} · 등록된 도시/지역</small></div><span class="map-list-status ${st==='방문'?'visited':st==='버킷리스트'?'bucket':'none'}">${esc(st)}</span></div>`)});
  tripRows.forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.city||x.title)}</b><small>${esc(x.title)} · ${esc(x.start_date||'')} ${x.end_date?`~ ${esc(x.end_date)}`:''}</small></div><span class="map-list-status ${x.status==='완료'?'visited':x.status==='버킷리스트'?'bucket':'none'}">${esc(x.status||'예정')}</span></div>`));
- placeRows.filter(x=>!placeCities(x).length&&!x.source_trip_id).forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.place_name)}</b><small>${esc(x.memo||'직접 등록한 방문지')}</small></div><span class="map-list-status ${x.status==='방문'?'visited':'bucket'}">${esc(x.status)}</span></div>`));
+ placeRows.filter(x=>!placeCities(x).length&&!isTripLinkedPlace(x)).forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.place_name)}</b><small>${esc(x.memo||'직접 등록한 방문지')}</small></div><span class="map-list-status ${x.status==='방문'?'visited':'bucket'}">${esc(x.status)}</span></div>`));
  worldTripList.innerHTML=cards.length?cards.join(''):'<div class="empty-mini">이 국가에 등록된 여행 또는 방문지 기록이 없습니다.</div>';
 }
 
@@ -787,6 +787,9 @@ async function loadAll(){
  }
  renderAll();
 }
+function isTripLinkedPlace(x){
+ return Number(x?.source_trip_id)>0;
+}
 function completedTripPlacePayload(x){
  const type=x.trip_type==="해외"?"해외":"국내";
  const region=type==="국내"?normalizeRegionKey(x.region):"";
@@ -815,18 +818,29 @@ function completedTripPlacePayload(x){
  };
 }
 async function autoArchiveCompletedTrips(){
+ // 단방향 연동: 지역별 일정(travel_trips) → 방문지 관리(travel_places)만 허용합니다.
+ // 방문지 관리에서 직접 등록한 항목은 지역별 일정으로 역생성하지 않습니다.
  const today=fmt(new Date());
- const targets=trips.filter(x=>Number(x.id)>0&&x.end_date&&x.end_date<today&&x.status!=="버킷리스트");
+ const targets=trips.filter(x=>
+   Number(x.id)>0 &&
+   x.end_date &&
+   x.end_date<today &&
+   x.status!=="버킷리스트"
+ );
  if(!targets.length)return false;
  let changed=false;
+
  for(const trip of targets){
    try{
+     // 여행 종료일이 지난 뒤에만 자동 완료 처리합니다.
      if(trip.status!=="완료"){
        await apiData("travel_trips","PUT",{...trip,status:"완료",updated_at:new Date().toISOString()},trip.id);
        trip.status="완료";
        changed=true;
      }
-     const already=places.some(p=>Number(p.source_trip_id)===Number(trip.id));
+
+     // 같은 여행은 방문지 관리에 한 번만 등록합니다.
+     const already=places.some(p=>isTripLinkedPlace(p)&&Number(p.source_trip_id)===Number(trip.id));
      if(!already){
        const saved=await apiData("travel_places","POST",completedTripPlacePayload(trip));
        if(saved) places.unshift(saved);
@@ -1258,7 +1272,10 @@ placeFormPublic.onsubmit=async e=>{
  const now=new Date().toISOString();
  const startDate=placeStartEdit.value||null,endDate=placeEndEdit.value||startDate;
  if(startDate&&endDate&&endDate<startDate){showFormError("placeFormPublic",new Error("종료일은 방문/계획일보다 빠를 수 없습니다."));return}
- const p={place_type:type,status:placeStatusEdit.value,place_name:name,region_name:region,city_name:city,city_names:cities,latitude:coord[0],longitude:coord[1],start_date:startDate,end_date:endDate,author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),updated_at:now};
+ const existingPlace=id?places.find(v=>Number(v.id)===Number(id)):null;
+ // 직접 등록한 방문지는 source_trip_id를 만들지 않습니다.
+ // 과거 지역별 일정에서 자동 생성된 방문지만 기존 source_trip_id를 유지합니다.
+ const p={place_type:type,status:placeStatusEdit.value,place_name:name,region_name:region,city_name:city,city_names:cities,latitude:coord[0],longitude:coord[1],start_date:startDate,end_date:endDate,author_name:placeAuthorEdit.value.trim(),memo:placeMemoEdit.value.trim(),source_trip_id:isTripLinkedPlace(existingPlace)?Number(existingPlace.source_trip_id):null,updated_at:now};
  try{
   let saved;
   if(id&&id>0) saved=await apiData("travel_places","PUT",p,id);
