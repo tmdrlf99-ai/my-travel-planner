@@ -2053,3 +2053,107 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
     background:#f0f3f4 !important;
   }
 }
+
+
+/* ===== v6.0.30 HOVER HIGHLIGHTS ===== */
+/* 홈 해시태그 */
+.hero-tags span{
+  transition:
+    transform .18s ease,
+    background .18s ease,
+    border-color .18s ease,
+    color .18s ease,
+    box-shadow .18s ease;
+}
+
+/* 홈 여행기록 / 방문지 관리 / 예산 요약 카드 */
+.summary-stats>div,
+.place-summary-grid>div,
+.budget-summary-grid>div{
+  position:relative;
+  overflow:hidden;
+  transition:
+    transform .20s ease,
+    box-shadow .20s ease,
+    border-color .20s ease,
+    background .20s ease;
+}
+
+/* 왼쪽 청록 포인트 라인 */
+.summary-stats>div::before,
+.place-summary-grid>div::before,
+.budget-summary-grid>div::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  width:4px;
+  height:100%;
+  background:#66c3a8;
+  transform:scaleY(0);
+  transform-origin:bottom;
+  transition:transform .20s ease;
+}
+
+.summary-stats b,
+.summary-stats small,
+.place-summary-grid span,
+.place-summary-grid strong,
+.budget-summary-grid span,
+.budget-summary-grid strong{
+  transition:color .18s ease;
+}
+
+@media (hover:hover) and (pointer:fine){
+  /* 해시태그 */
+  .hero-tags span:hover{
+    transform:translateY(-2px);
+    background:#e7f6f1;
+    border-color:#9ed7c7;
+    color:#19745f;
+    box-shadow:0 5px 12px rgba(37,125,102,.10);
+  }
+
+  /* 세 종류의 요약 카드 공통 */
+  .summary-stats>div:hover,
+  .place-summary-grid>div:hover,
+  .budget-summary-grid>div:hover{
+    transform:translateY(-4px);
+    border-color:#a9d9cc;
+    background:linear-gradient(145deg,#fbfefd,#eef9f5);
+    box-shadow:0 12px 26px rgba(38,105,87,.11);
+  }
+
+  .summary-stats>div:hover::before,
+  .place-summary-grid>div:hover::before,
+  .budget-summary-grid>div:hover::before{
+    transform:scaleY(1);
+  }
+
+  .summary-stats>div:hover b,
+  .place-summary-grid>div:hover strong,
+  .budget-summary-grid>div:hover strong{
+    color:#176d5b;
+  }
+
+  .summary-stats>div:hover small,
+  .place-summary-grid>div:hover span,
+  .budget-summary-grid>div:hover span{
+    color:#4d8d7d;
+  }
+}
+
+/* 모바일은 hover 대신 터치 순간만 가볍게 반응 */
+@media(max-width:720px){
+  .summary-stats>div:active,
+  .place-summary-grid>div:active,
+  .budget-summary-grid>div:active{
+    background:#f1faf7;
+    border-color:#b7ddd3;
+  }
+  .hero-tags span:active{
+    background:#e7f6f1;
+    border-color:#9ed7c7;
+    color:#19745f;
+  }
+}
