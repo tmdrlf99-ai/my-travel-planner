@@ -12,6 +12,12 @@ const LOCAL_KEYS={
  budgets:"travel_local_budgets",
  places:"travel_local_places"
 };
+
+function cleanAutoRegisteredMemo(value){
+ const text=String(value||"");
+ return text.replace(/^지역별 일정 자동등록(?:\s*·\s*[^\n]*)?\n?/,"").trim();
+}
+
 function localRead(kind){
  try{return JSON.parse(localStorage.getItem(LOCAL_KEYS[kind])||"[]")}catch(_){return []}
 }
@@ -670,7 +676,7 @@ function showKoreaMunicipality(region,city){
  koreaDesc.textContent=`${label} · 여행 ${tripRows.length}건 · 방문지 기록 ${placeRows.length}건. 이 시·군/구의 실제 영역만 지도에 표시됩니다.`;
  koreaTripList.classList.add('map-region-list');
  const cards=[];
- tripRows.forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.title)}</b><small>${esc(x.start_date||'')}${x.end_date?` ~ ${esc(x.end_date)}`:''}${x.memo?` · ${esc(x.memo)}`:''}</small></div><span class="map-list-status ${x.status==='완료'?'visited':x.status==='버킷리스트'?'bucket':'none'}">${esc(x.status||'예정')}</span></div>`));
+ tripRows.forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.title)}</b><small>${esc(x.start_date||'')}${x.end_date?` ~ ${esc(x.end_date)}`:''}${x.memo?` · ${esc(cleanAutoRegisteredMemo(x.memo))}`:''}</small></div><span class="map-list-status ${x.status==='완료'?'visited':x.status==='버킷리스트'?'bucket':'none'}">${esc(x.status||'예정')}</span></div>`));
  placeRows.filter(x=>!x.source_trip_id).forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(selectedKoreaCity)}</b><small>${esc(x.memo||'직접 등록한 방문지')}</small></div><span class="map-list-status ${x.status==='방문'?'visited':'bucket'}">${esc(x.status)}</span></div>`));
  koreaTripList.innerHTML=cards.length?cards.join(''):'<div class="empty-mini">이 지역에 등록된 여행 또는 방문지 기록이 없습니다.</div>';
 }
@@ -790,7 +796,7 @@ function completedTripPlacePayload(x){
    ? (KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]||[36.5,127.8])
    : (worldCityCoord(country,city)||countryCenterCoord(country)||[0,0]);
  const placeName=type==="국내"?(city||regionLabel(region)||x.title):(country||x.title);
- const sourceMemo=[`지역별 일정 자동등록 · ${x.title}`,x.memo||""].filter(Boolean).join("\n");
+ const sourceMemo=x.memo||"";
  return {
    place_type:type,
    status:"방문",
