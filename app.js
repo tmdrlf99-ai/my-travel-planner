@@ -63,6 +63,11 @@ async function apiData(table,method="GET",row=null,id=null){
   const txt=await res.text().catch(()=>"");
   payload=txt?{error:txt}:{};
  }
+ if(res.status===401){
+  __siteAppStarted=false;
+  clearInterval(window.__travelSyncTimer);
+  showSiteAuth("로그인이 만료되었습니다. 다시 입력해 주세요.");
+ }
  if(!res.ok||payload.error){
   let msg=apiErrorText(payload.error)||apiErrorText(payload);
   if(res.status===404) msg="동기화 API 경로(/api/travel-data)를 찾지 못했습니다. GitHub에 api/travel-data.js가 실제 폴더 경로로 등록되어 있는지 확인해 주세요.";
@@ -1530,6 +1535,94 @@ heroSearchBox?.addEventListener('click',e=>{if(e.target===heroSearchBox||e.targe
 let __navRaf=0;
 addEventListener("scroll",()=>{if(__navRaf)return;__navRaf=requestAnimationFrame(()=>{__navRaf=0;updateActiveNav()})},{passive:true});
 addEventListener("resize",updateActiveNav,{passive:true});
-loadAll().then(async()=>{await migrateLegacyPlacesInBackground();startAutoSync();updateActiveNav();});
+
+let __siteAppStarted=false;
+
+function showSiteAuth(message=""){
+ const gate=document.getElementById("siteAuthGate");
+ const shell=document.getElementById("appShell");
+ const msg=document.getElementById("siteAuthMessage");
+ if(shell)shell.hidden=true;
+ if(gate)gate.hidden=false;
+ if(msg)msg.textContent=message;
+ setTimeout(()=>document.getElementById("siteAuthPassword")?.focus(),20);
+}
+
+function showSiteApp(){
+ const gate=document.getElementById("siteAuthGate");
+ const shell=document.getElementById("appShell");
+ if(gate)gate.hidden=true;
+ if(shell)shell.hidden=false;
+}
+
+async function siteAuthStatus(){
+ try{
+  const res=await fetch("/api/auth",{method:"GET",headers:{Accept:"application/json"},cache:"no-store"});
+  const payload=await res.json().catch(()=>({}));
+  if(res.status===503)throw new Error(payload.error||"비밀번호 서버 설정이 필요합니다.");
+  return Boolean(res.ok&&payload.authenticated);
+ }catch(err){
+  showSiteAuth(err.message||"비밀번호 확인 서버에 연결할 수 없습니다.");
+  return false;
+ }
+}
+
+async function startProtectedTravelApp(){
+ if(__siteAppStarted)return;
+ __siteAppStarted=true;
+ showSiteApp();
+ try{
+  await loadAll();
+  await migrateLegacyPlacesInBackground();
+  startAutoSync();
+  updateActiveNav();
+ }catch(err){
+  __siteAppStarted=false;
+  if(/잠금|AUTH_REQUIRED|401/.test(String(err?.message||err)))showSiteAuth("로그인이 만료되었습니다. 다시 입력해 주세요.");
+  else throw err;
+ }
+}
+
+async function initializeSiteAuth(){
+ const ok=await siteAuthStatus();
+ if(ok)await startProtectedTravelApp();
+ else showSiteAuth();
+}
+
+document.getElementById("siteAuthForm")?.addEventListener("submit",async event=>{
+ event.preventDefault();
+ const input=document.getElementById("siteAuthPassword");
+ const message=document.getElementById("siteAuthMessage");
+ const button=event.currentTarget.querySelector('button[type="submit"]');
+ const password=input?.value||"";
+ if(message)message.textContent="";
+ if(button){button.disabled=true;button.textContent="확인 중...";}
+ try{
+  const res=await fetch("/api/auth",{
+   method:"POST",
+   headers:{"Content-Type":"application/json","Accept":"application/json"},
+   body:JSON.stringify({password}),
+   cache:"no-store"
+  });
+  const payload=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(payload.error||"비밀번호를 확인할 수 없습니다.");
+  if(input)input.value="";
+  await startProtectedTravelApp();
+ }catch(err){
+  if(message)message.textContent=err.message||"비밀번호가 올바르지 않습니다.";
+  input?.select();
+ }finally{
+  if(button){button.disabled=false;button.textContent="열기";}
+ }
+});
+
+document.getElementById("siteLogoutBtn")?.addEventListener("click",async()=>{
+ try{await fetch("/api/auth",{method:"DELETE",cache:"no-store"});}catch(_){}
+ __siteAppStarted=false;
+ clearInterval(window.__travelSyncTimer);
+ showSiteAuth("사이트를 잠갔습니다.");
+});
+
+initializeSiteAuth();
 
 window.addEventListener("unhandledrejection",e=>{console.warn("Background sync failed",e.reason);e.preventDefault();});

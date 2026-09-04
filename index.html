@@ -8,7 +8,25 @@
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"/>
 </head>
 <body>
-<div class="app-shell">
+<section id="siteAuthGate" class="site-auth-gate">
+  <div class="site-auth-card">
+    <div class="site-auth-mark">✦</div>
+    <span class="site-auth-eyebrow">MY TRAVEL PLANNER</span>
+    <h1>여행 기록 열기</h1>
+    <p>개인 여행 기록입니다.<br>비밀번호를 입력해 주세요.</p>
+    <form id="siteAuthForm" autocomplete="off">
+      <label for="siteAuthPassword">비밀번호</label>
+      <div class="site-auth-input-row">
+        <input id="siteAuthPassword" type="password" inputmode="numeric" maxlength="20"
+               autocomplete="current-password" placeholder="비밀번호 입력" required/>
+        <button type="submit">열기</button>
+      </div>
+      <small id="siteAuthMessage" aria-live="polite"></small>
+    </form>
+  </div>
+</section>
+
+<div class="app-shell" id="appShell" hidden>
   <aside class="sidebar">
     <a class="brand" href="#home">
       <div class="brand-mark">✦</div>
@@ -38,7 +56,7 @@
     <header class="topbar">
       <div class="topbar-copy"><i></i><span>여행의 시작부터 기록까지, 한 곳에서.</span></div>
       <div class="top-actions">
-        
+        <button id="siteLogoutBtn" class="site-lock-btn" type="button" title="사이트 잠금">🔒 잠금</button>
         <button id="openTripCreate" class="primary-btn">+ 새 여행</button>
       </div>
     </header>

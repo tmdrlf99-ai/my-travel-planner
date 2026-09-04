@@ -1931,3 +1931,63 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
 .location-search-pair .location-search{margin:0!important}
 .location-search-pair select{min-width:0;width:100%;margin:0!important}
 @media(max-width:720px){.location-search-pair{grid-template-columns:1fr}.editor-modal .location-search{font-size:13px!important}}
+
+
+/* ===== v6.0.24 PASSWORD GATE ===== */
+.site-auth-gate{
+  position:fixed;inset:0;z-index:99999;
+  display:grid;place-items:center;
+  min-height:100dvh;padding:24px;
+  background:
+    radial-gradient(circle at 15% 15%,rgba(163,220,201,.26),transparent 32%),
+    radial-gradient(circle at 85% 82%,rgba(255,220,151,.22),transparent 34%),
+    #f7faf9;
+}
+.site-auth-gate[hidden]{display:none!important}
+.site-auth-card{
+  width:min(430px,100%);
+  padding:38px 34px 32px;
+  border:1px solid #d9e8e3;border-radius:26px;
+  background:rgba(255,255,255,.96);
+  box-shadow:0 22px 60px rgba(30,74,62,.12);
+  text-align:center;
+}
+.site-auth-mark{
+  width:62px;height:62px;margin:0 auto 16px;
+  display:grid;place-items:center;border-radius:20px;
+  background:#e2f5ee;font-size:30px;color:#27836a;
+}
+.site-auth-eyebrow{
+  display:block;margin-bottom:7px;
+  color:#3c9a80;font-size:11px;font-weight:800;letter-spacing:.12em;
+}
+.site-auth-card h1{margin:0;color:#173f59;font-size:27px;letter-spacing:-.04em}
+.site-auth-card>p{margin:12px 0 25px;color:#71818a;font-size:14px;line-height:1.65}
+.site-auth-card form{text-align:left}
+.site-auth-card label{display:block;margin:0 0 7px;color:#51636c;font-size:12px;font-weight:700}
+.site-auth-input-row{display:flex;gap:9px}
+.site-auth-input-row input{
+  min-width:0;flex:1;height:48px;padding:0 15px;
+  border:1px solid #d7e4e0;border-radius:14px;
+  background:#fbfdfc;color:#173f59;font:inherit;
+  outline:none;
+}
+.site-auth-input-row input:focus{
+  border-color:#64bca3;box-shadow:0 0 0 3px rgba(81,175,148,.12);
+}
+.site-auth-input-row button{
+  flex:0 0 auto;height:48px;padding:0 20px;border:0;border-radius:14px;
+  background:#2f9075;color:#fff;font-weight:800;cursor:pointer;
+}
+#siteAuthMessage{display:block;min-height:20px;margin-top:9px;color:#d45e5e;font-size:12px}
+.site-lock-btn{
+  height:38px;padding:0 12px;border:1px solid #d7e4e0;border-radius:11px;
+  background:#fff;color:#5c6f77;font:inherit;font-size:12px;font-weight:700;cursor:pointer;
+}
+.site-lock-btn:hover{background:#f3f8f6}
+@media(max-width:600px){
+  .site-auth-card{padding:32px 22px 27px;border-radius:22px}
+  .site-auth-input-row{flex-direction:column}
+  .site-auth-input-row button{width:100%}
+  .site-lock-btn{padding:0 9px}
+}
