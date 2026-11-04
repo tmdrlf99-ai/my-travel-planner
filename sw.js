@@ -1,4 +1,4 @@
-const CACHE_NAME="mtp-pwa-v6-0-35-region-count";
+const CACHE_NAME="mtp-pwa-v6-1-1-map-match";
 const APP_SHELL=[
   "/",
   "/index.html",

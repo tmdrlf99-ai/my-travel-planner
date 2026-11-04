@@ -412,12 +412,57 @@ function syncTripLocationFields(region="",city="",country=""){
  tripCountryEdit.required=true;
 }
 const placeCities=x=>{
- const arr=Array.isArray(x?.city_names)?x.city_names:[];
+ let raw=x?.city_names;
+ // DB에서 JSON 문자열로 내려오는 경우도 처리합니다.
+ if(typeof raw==="string"){try{raw=JSON.parse(raw)}catch(_){raw=raw.split(/[,·]/)}}
+ const arr=Array.isArray(raw)?raw:[];
  const cleaned=arr.map(v=>String(v||"").trim()).filter(Boolean);
  if(cleaned.length)return [...new Set(cleaned)];
  const legacy=String(x?.city_name||"").trim();
  return legacy?[legacy]:[];
 };
+// v6.1.1: 국내 지도 매칭 보강.
+// "포항시"·"포항 " 처럼 표기가 조금 달라도 시·군/구 목록의 정식 이름("포항")으로 맞춥니다.
+function normalizeKrCity(region,city){
+ const key=normalizeRegionKey(region);
+ const list=KR_REGION_CITIES[key]||[];
+ const v=String(city||"").replace(/\s+/g,"").trim();
+ if(!v)return "";
+ if(list.includes(v))return v;
+ if(key==="세종")return /^세종/.test(v)?"세종시":v;
+ const stripped=v.replace(/(특별시|광역시|특별자치시|특별자치도|시|군|구)$/,"");
+ if(list.includes(stripped))return stripped;
+ const hit=list.find(c=>c===v+"시"||c===v+"군"||c===v+"구"||c.replace(/(시|군|구)$/,"")===stripped);
+ return hit||v;
+}
+// 도시 이름만으로 시·도를 역추적합니다. 두 곳 이상에 같은 이름이 있으면(광주·고성·중구 등) 추측하지 않습니다.
+function inferKrRegionFromCity(city){
+ const v=String(city||"").replace(/\s+/g,"").trim();if(!v)return "";
+ const hits=Object.keys(KR_REGION_CITIES).filter(r=>normalizeKrCity(r,v)&&KR_REGION_CITIES[r].includes(normalizeKrCity(r,v)));
+ return hits.length===1?hits[0]:"";
+}
+// 방문지 레코드 하나에서 (시·도, [시·군/구...])를 뽑아냅니다. 옛 형식(region_name 없음, place_name에 도시명)도 처리합니다.
+function domesticPlaceLocation(x){
+ if(!x||x.place_type!=="국내")return {region:"",cities:[]};
+ const pn=String(x.place_name||"").trim();
+ let region=normalizeRegionKey(x.region_name||"");
+ if(!KR_REGION_CITIES[region]){region=normalizeRegionKey(pn);if(!KR_REGION_CITIES[region])region="";}
+ let cities=placeCities(x);
+ if(!cities.length&&pn&&!KR_REGION_CITIES[normalizeRegionKey(pn)])cities=[pn];
+ if(!region){const guess=cities.map(inferKrRegionFromCity).find(Boolean);if(guess)region=guess;}
+ if(!region)return {region:"",cities:[]};
+ cities=[...new Set(cities.map(c=>normalizeKrCity(region,c)).filter(Boolean))];
+ return {region,cities};
+}
+// 지역별 일정(trip) 레코드에서도 같은 방식으로 뽑습니다.
+function domesticTripLocation(x){
+ if(!x||x.trip_type!=="국내")return {region:"",city:""};
+ let region=normalizeRegionKey(x.region||"");
+ const rawCity=String(x.city||"").trim();
+ if(!KR_REGION_CITIES[region]){region=inferKrRegionFromCity(rawCity);}
+ if(!region)return {region:"",city:""};
+ return {region,city:normalizeKrCity(region,rawCity)};
+}
 const domesticPlaceText=x=>{
  const r=x.region_name||"", cities=placeCities(x);
  if(r&&cities.length) return `${regionLabel(r)} · ${cities.join(" · ")}`;
@@ -565,6 +610,46 @@ let koreaMunicipalityBaseGeoJSON=null,worldCountryBaseGeoJSON=null;
 let koreaRegionLayerReady=false,worldCountryLayerReady=false;
 let koreaRegionLayerFailed=false,worldCountryLayerFailed=false;
 let selectedKoreaRegion="",selectedKoreaCity="",selectedWorldGeoName="";
+let koreaPopup=null,worldPopup=null;
+
+// v6.1: 지도 위 말풍선(팝업). 지역/국가/도시를 클릭하면 클릭한 자리에 요약이 뜨고, 옆 패널에는 상세 기록이 나옵니다.
+function closeMapPopup(which){
+ if(which==='korea'){if(koreaPopup){koreaPopup.remove();koreaPopup=null}}
+ else{if(worldPopup){worldPopup.remove();worldPopup=null}}
+}
+function showMapPopup(which,lngLat,title,lines=[],items=[]){
+ const mapInstance=which==='korea'?koreaMap:worldMap;
+ if(!mapInstance||!lngLat||typeof maplibregl==='undefined')return;
+ closeMapPopup(which);
+ const html=`<div class="travel-popup"><b>${esc(title)}</b>${lines.filter(Boolean).map(l=>`<small>${esc(l)}</small>`).join('')}${items.length?`<ul>${items.map(x=>`<li><i class="${esc(x.cls||'')}">${esc(x.badge||'')}</i>${esc(x.text||'')}</li>`).join('')}</ul>`:''}</div>`;
+ const popup=new maplibregl.Popup({closeButton:true,closeOnClick:false,maxWidth:'270px',className:'travel-map-popup',offset:12})
+   .setLngLat(lngLat).setHTML(html).addTo(mapInstance);
+ popup.on('close',()=>{if(which==='korea'&&koreaPopup===popup)koreaPopup=null;if(which==='world'&&worldPopup===popup)worldPopup=null});
+ if(which==='korea')koreaPopup=popup;else worldPopup=popup;
+}
+function statusBadge(st){
+ if(st==='visited'||st==='방문'||st==='완료')return {badge:'방문',cls:'visited'};
+ if(st==='bucket'||st==='버킷리스트')return {badge:'버킷',cls:'bucket'};
+ if(st==='예정'||st==='진행중')return {badge:st,cls:'none'};
+ return {badge:'미등록',cls:'none'};
+}
+function dateRangeText(x){
+ const s=String(x?.start_date||'').slice(0,10),e=String(x?.end_date||'').slice(0,10);
+ if(s&&e&&s!==e)return `${s} ~ ${e}`;return s||e||'';
+}
+// 지오메트리의 경계 상자. MultiPolygon은 가장 큰 조각 하나만 사용(해외 영토가 많은 국가가 지나치게 축소되는 것을 방지).
+function geometryBounds(geometry){
+ if(!geometry)return null;
+ const ringBounds=ring=>{let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;ring.forEach(([x,y])=>{if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y});return [minX,minY,maxX,maxY]};
+ let polys=[];
+ if(geometry.type==='Polygon')polys=[geometry.coordinates];
+ else if(geometry.type==='MultiPolygon')polys=geometry.coordinates;
+ else return null;
+ let best=null,bestArea=-1;
+ polys.forEach(poly=>{const outer=poly?.[0];if(!outer||outer.length<3)return;const b=ringBounds(outer);const area=(b[2]-b[0])*(b[3]-b[1]);if(area>bestArea){bestArea=area;best=b}});
+ if(!best||!Number.isFinite(bestArea))return null;
+ return [[best[0],best[1]],[best[2],best[3]]];
+}
 
 const KOREA_MUNICIPALITY_KML_URL="https://cdn.jsdelivr.net/gh/southkorea/southkorea-maps@master/kostat/2013/kml/skorea_municipalities_simple.kml";
 const WORLD_COUNTRY_GEOJSON_URL="https://cdn.jsdelivr.net/gh/johan/world.geo.json@master/countries.geo.json";
@@ -638,17 +723,17 @@ async function fetchKoreaMunicipalityGeoJSON(){
  });
  return {type:'FeatureCollection',features};
 }
+function domesticPlacesAt(region,city){
+ return places.filter(x=>{const loc=domesticPlaceLocation(x);return loc.region===region&&loc.cities.includes(city)});
+}
+function domesticTripsAt(region,city){
+ return trips.filter(x=>{const loc=domesticTripLocation(x);return loc.region===region&&loc.city===city});
+}
 function domesticMunicipalityStatus(region,city){
- const rows=places.filter(x=>{
-   if(x.place_type!=='국내')return false;
-   const rowRegion=normalizeRegionKey(x.region_name||((PLACE_PRESETS['국내']||{})[x.place_name]?x.place_name:''));
-   const rowCities=placeCities(x);
-   const legacyCity=(!rowCities.length&&x.region_name&&x.place_name!==x.region_name)?String(x.place_name||'').trim():'';
-   return rowRegion===region&&(rowCities.includes(city)||legacyCity===city);
- });
+ const rows=domesticPlacesAt(region,city);
  if(rows.some(x=>x.status==='방문'))return 'visited';
  if(rows.some(x=>x.status==='버킷리스트'))return 'bucket';
- const tripRows=trips.filter(x=>x.trip_type==='국내'&&normalizeRegionKey(x.region)===region&&String(x.city||'').trim()===city);
+ const tripRows=domesticTripsAt(region,city);
  if(tripRows.some(x=>x.status==='완료'))return 'visited';
  if(tripRows.some(x=>x.status==='버킷리스트'))return 'bucket';
  return 'none';
@@ -692,7 +777,6 @@ function mapLinePaint(){return {
 }}
 function showKoreaRegion(region){
  selectedKoreaRegion=normalizeRegionKey(region);selectedKoreaCity='';updateKoreaRegionSource();
- const rows=places.filter(x=>x.place_type==='국내'&&normalizeRegionKey(x.region_name||x.place_name)===selectedKoreaRegion);
  const cityNames=KR_REGION_CITIES[selectedKoreaRegion]||[];
  const visited=cityNames.filter(c=>domesticMunicipalityStatus(selectedKoreaRegion,c)==='visited').length;
  const bucket=cityNames.filter(c=>domesticMunicipalityStatus(selectedKoreaRegion,c)==='bucket').length;
@@ -701,16 +785,10 @@ function showKoreaRegion(region){
  koreaTripList.classList.add('map-region-list');
  koreaTripList.innerHTML=cityNames.map(city=>{const st=domesticMunicipalityStatus(selectedKoreaRegion,city),label=st==='visited'?'방문':st==='bucket'?'버킷':'미등록';return `<div class="map-region-item"><div><b>${esc(city)}</b><small>${st==='none'?'아직 등록된 기록이 없습니다.':'방문지·여행 기록과 연동됨'}</small></div><span class="map-list-status ${st}">${label}</span></div>`}).join('');
 }
-function showKoreaMunicipality(region,city){
- selectedKoreaRegion=normalizeRegionKey(region);selectedKoreaCity=city;updateKoreaRegionSource();
- const placeRows=places.filter(x=>{
-   if(x.place_type!=='국내')return false;
-   const rowRegion=normalizeRegionKey(x.region_name||((PLACE_PRESETS['국내']||{})[x.place_name]?x.place_name:''));
-   const rowCities=placeCities(x);
-   const legacyCity=(!rowCities.length&&x.region_name&&x.place_name!==x.region_name)?String(x.place_name||'').trim():'';
-   return rowRegion===selectedKoreaRegion&&(rowCities.includes(selectedKoreaCity)||legacyCity===selectedKoreaCity);
- }).sort(chronological);
- const tripRows=trips.filter(x=>x.trip_type==='국내'&&normalizeRegionKey(x.region)===selectedKoreaRegion&&String(x.city||'').trim()===selectedKoreaCity).sort(chronological);
+function showKoreaMunicipality(region,city,lngLat=null){
+ selectedKoreaRegion=normalizeRegionKey(region);selectedKoreaCity=normalizeKrCity(selectedKoreaRegion,city);updateKoreaRegionSource();
+ const placeRows=domesticPlacesAt(selectedKoreaRegion,selectedKoreaCity).sort(chronological);
+ const tripRows=domesticTripsAt(selectedKoreaRegion,selectedKoreaCity).sort(chronological);
  const st=domesticMunicipalityStatus(selectedKoreaRegion,selectedKoreaCity);
  const label=st==='visited'?'방문 지역':st==='bucket'?'버킷리스트 지역':'미등록 지역';
  koreaRegion.textContent=`${regionLabel(selectedKoreaRegion)} · ${selectedKoreaCity}`;
@@ -720,8 +798,16 @@ function showKoreaMunicipality(region,city){
  tripRows.forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.title)}</b><small>${esc(x.start_date||'')}${x.end_date?` ~ ${esc(x.end_date)}`:''}${x.memo?` · ${esc(cleanAutoRegisteredMemo(x.memo))}`:''}</small></div><span class="map-list-status ${x.status==='완료'?'visited':x.status==='버킷리스트'?'bucket':'none'}">${esc(x.status||'예정')}</span></div>`));
  placeRows.filter(x=>!isTripLinkedPlace(x)).forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(selectedKoreaCity)}</b><small>${esc(x.memo||'직접 등록한 방문지')}</small></div><span class="map-list-status ${x.status==='방문'?'visited':'bucket'}">${esc(x.status)}</span></div>`));
  koreaTripList.innerHTML=cards.length?cards.join(''):'<div class="empty-mini">이 지역에 등록된 여행 또는 방문지 기록이 없습니다.</div>';
+ if(lngLat){
+   const items=[];
+   tripRows.slice(0,3).forEach(x=>items.push({...statusBadge(x.status),text:`${x.title}${dateRangeText(x)?` · ${dateRangeText(x)}`:''}`}));
+   placeRows.filter(x=>!isTripLinkedPlace(x)).slice(0,Math.max(0,3-items.length)).forEach(x=>items.push({...statusBadge(x.status),text:x.memo||'직접 등록한 방문지'}));
+   const more=tripRows.length+placeRows.filter(x=>!isTripLinkedPlace(x)).length-items.length;
+   if(more>0)items.push({badge:'',cls:'',text:`외 ${more}건 · 옆 패널에서 전체 보기`});
+   showMapPopup('korea',lngLat,`${regionLabel(selectedKoreaRegion)} ${selectedKoreaCity}`,[`${label} · 여행 ${tripRows.length}건 · 방문지 ${placeRows.length}건`],items);
+ }
 }
-function showWorldCountry(geoName){
+function showWorldCountry(geoName,lngLat=null,feature=null){
  selectedWorldGeoName=normalizeWorldGeoName(geoName);updateWorldCountrySource();
  const ko=worldKoreanName(selectedWorldGeoName);
  const placeRows=places.filter(x=>x.place_type==='해외'&&worldGeoNameForPlace(x.place_name)===selectedWorldGeoName).sort(chronological);
@@ -742,6 +828,43 @@ function showWorldCountry(geoName){
  tripRows.forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.city||x.title)}</b><small>${esc(x.title)} · ${esc(x.start_date||'')} ${x.end_date?`~ ${esc(x.end_date)}`:''}</small></div><span class="map-list-status ${x.status==='완료'?'visited':x.status==='버킷리스트'?'bucket':'none'}">${esc(x.status||'예정')}</span></div>`));
  placeRows.filter(x=>!placeCities(x).length&&!isTripLinkedPlace(x)).forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.place_name)}</b><small>${esc(x.memo||'직접 등록한 방문지')}</small></div><span class="map-list-status ${x.status==='방문'?'visited':'bucket'}">${esc(x.status)}</span></div>`));
  worldTripList.innerHTML=cards.length?cards.join(''):'<div class="empty-mini">이 국가에 등록된 여행 또는 방문지 기록이 없습니다.</div>';
+ if(lngLat){
+   const items=recordedCities.slice(0,4).map(city=>({...statusBadge(cityStatus.get(city)||'예정'),text:city}));
+   if(recordedCities.length>4)items.push({badge:'',cls:'',text:`외 ${recordedCities.length-4}곳 · 옆 패널에서 전체 보기`});
+   const hint=recordedCities.length?'확대해서 도시 점을 누르면 도시별 기록이 보입니다.':'';
+   showMapPopup('world',lngLat,ko,[`${countrySummary} · 여행 ${tripRows.length}건 · 방문지 ${placeRows.length}건`,hint],items);
+ }
+ // 세계 전체 보기 상태에서 국가를 누르면 그 나라로 확대해 도시 점을 고를 수 있게 합니다.
+ if(feature&&worldMap&&worldMap.getZoom()<4){
+   const bounds=geometryBounds(feature.geometry);
+   if(bounds){try{worldMap.fitBounds(bounds,{padding:{top:60,bottom:40,left:40,right:40},maxZoom:5.5,duration:900})}catch(_){ }}
+ }
+}
+// 세계지도에서 도시 점을 눌렀을 때: 그 도시의 여행·방문지 기록만 보여줍니다.
+function showWorldCity(country,city,lngLat=null){
+ country=String(country||'').trim();city=String(city||'').trim();if(!country||!city)return;
+ const geoName=worldGeoNameForPlace(country);
+ selectedWorldGeoName=geoName;updateWorldCountrySource();
+ const ko=worldKoreanName(geoName);
+ const placeRows=places.filter(x=>x.place_type==='해외'&&worldGeoNameForPlace(x.place_name)===geoName&&placeCities(x).includes(city)).sort(chronological);
+ const tripRows=trips.filter(x=>x.trip_type==='해외'&&worldGeoNameForPlace(x.country)===geoName&&String(x.city||'').trim()===city).sort(chronological);
+ let st='예정';
+ if(placeRows.some(x=>x.status==='방문')||tripRows.some(x=>x.status==='완료'))st='방문';
+ else if(placeRows.some(x=>x.status==='버킷리스트')||tripRows.some(x=>x.status==='버킷리스트'))st='버킷리스트';
+ const label=st==='방문'?'방문 도시':st==='버킷리스트'?'버킷리스트 도시':'예정 도시';
+ worldCountry.textContent=`${ko} · ${city}`;
+ worldDesc.textContent=`${label} · 여행 ${tripRows.length}건 · 방문지 기록 ${placeRows.length}건. 국가 전체 기록은 지도에서 국가 영역을 눌러 확인하세요.`;
+ worldTripList.classList.add('map-region-list');
+ const cards=[];
+ tripRows.forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(x.title)}</b><small>${esc(dateRangeText(x))}${x.memo?` · ${esc(cleanAutoRegisteredMemo(x.memo))}`:''}</small></div><span class="map-list-status ${x.status==='완료'?'visited':x.status==='버킷리스트'?'bucket':'none'}">${esc(x.status||'예정')}</span></div>`));
+ placeRows.filter(x=>!isTripLinkedPlace(x)).forEach(x=>cards.push(`<div class="map-region-item"><div><b>${esc(city)}</b><small>${esc(x.memo||'직접 등록한 방문지')}</small></div><span class="map-list-status ${x.status==='방문'?'visited':'bucket'}">${esc(x.status)}</span></div>`));
+ worldTripList.innerHTML=cards.length?cards.join(''):'<div class="empty-mini">이 도시에 등록된 여행 또는 방문지 기록이 없습니다.</div>';
+ if(lngLat){
+   const items=[];
+   tripRows.slice(0,3).forEach(x=>items.push({...statusBadge(x.status),text:`${x.title}${dateRangeText(x)?` · ${dateRangeText(x)}`:''}`}));
+   placeRows.filter(x=>!isTripLinkedPlace(x)).slice(0,Math.max(0,3-items.length)).forEach(x=>items.push({...statusBadge(x.status),text:x.memo||'직접 등록한 방문지'}));
+   showMapPopup('world',lngLat,`${ko} · ${city}`,[`${label} · 여행 ${tripRows.length}건 · 방문지 ${placeRows.length}건`],items);
+ }
 }
 
 async function setupKoreaRegionLayer(){
@@ -755,7 +878,9 @@ async function setupKoreaRegionLayer(){
    koreaRegionLayerReady=true;clearMapMarkers(koreaMapMarkers);updateKoreaRegionSource();
    koreaMap.on('mouseenter','travel-korea-fill',()=>{koreaMap.getCanvas().style.cursor='pointer'});
    koreaMap.on('mouseleave','travel-korea-fill',()=>{koreaMap.getCanvas().style.cursor=''});
-   koreaMap.on('click','travel-korea-fill',e=>{const f=e.features?.[0];if(f?.properties?.region_key&&f?.properties?.city_key)showKoreaMunicipality(f.properties.region_key,f.properties.city_key)});
+   koreaMap.on('click','travel-korea-fill',e=>{const f=e.features?.[0];if(f?.properties?.region_key&&f?.properties?.city_key)showKoreaMunicipality(f.properties.region_key,f.properties.city_key,e.lngLat)});
+   // 지역 밖(바다 등)을 누르면 말풍선을 닫습니다.
+   koreaMap.on('click',e=>{if(!koreaMap.getLayer('travel-korea-fill'))return;const hits=koreaMap.queryRenderedFeatures(e.point,{layers:['travel-korea-fill']});if(!hits.length)closeMapPopup('korea')});
  }catch(err){console.warn('Korea municipality fill map unavailable; marker fallback retained.',err);koreaRegionLayerFailed=true;renderKoreaFallbackMarkers();}
 }
 async function setupWorldCountryLayer(){
@@ -770,7 +895,9 @@ async function setupWorldCountryLayer(){
    worldCountryLayerReady=true;updateWorldCountrySource();renderWorldFallbackMarkers();
    worldMap.on('mouseenter','travel-world-fill',()=>{worldMap.getCanvas().style.cursor='pointer'});
    worldMap.on('mouseleave','travel-world-fill',()=>{worldMap.getCanvas().style.cursor=''});
-   worldMap.on('click','travel-world-fill',e=>{const f=e.features?.[0];const n=f?.properties?.geo_name||f?.properties?.name;if(n)showWorldCountry(n)});
+   worldMap.on('click','travel-world-fill',e=>{const f=e.features?.[0];const n=f?.properties?.geo_name||f?.properties?.name;if(n)showWorldCountry(n,e.lngLat,f)});
+   // 국가 밖(바다 등)을 누르면 말풍선을 닫습니다.
+   worldMap.on('click',e=>{if(!worldMap.getLayer('travel-world-fill'))return;const hits=worldMap.queryRenderedFeatures(e.point,{layers:['travel-world-fill']});if(!hits.length)closeMapPopup('world')});
  }catch(err){console.warn('World fill map unavailable; marker fallback retained.',err);worldCountryLayerFailed=true;renderWorldFallbackMarkers();}
 }
 
@@ -937,15 +1064,11 @@ function renderHero(){
  const domesticVisitedRegions=new Set(
    visitedYearPlaces
      .filter(x=>x.place_type==="국내")
-     .map(x=>{
-       const region=normalizeRegionKey(x.region_name||"");
-       const legacy=normalizeRegionKey(String(x.place_name||"").trim());
-       return region||legacy;
-     })
+     .map(x=>domesticPlaceLocation(x).region)
      .filter(region=>region&&KR_REGION_CITIES[region])
  );
  completedYearTrips.filter(x=>x.trip_type==="국내").forEach(x=>{
-   const region=normalizeRegionKey(x.region||"");
+   const region=domesticTripLocation(x).region;
    if(region&&KR_REGION_CITIES[region])domesticVisitedRegions.add(region);
  });
  statCities.textContent=domesticVisitedRegions.size;
@@ -1198,14 +1321,15 @@ function markerElement(status){
 function renderKoreaFallbackMarkers(){
  if(!koreaMap)return;clearMapMarkers(koreaMapMarkers);
  places.filter(x=>x.place_type==='국내').forEach(x=>{
-   const region=normalizeRegionKey(x.region_name||x.place_name),cities=placeCities(x);
+   const loc=domesticPlaceLocation(x);
+   const region=loc.region||normalizeRegionKey(x.region_name||x.place_name),cities=loc.cities;
    const targets=cities.length?cities:[""];
    targets.forEach(city=>{
      const coord=city?(KR_CITY_COORDS[city]||(PLACE_PRESETS["국내"]||{})[region]):[Number(x.latitude),Number(x.longitude)];
      const lat=city?coord?.[0]:Number(x.latitude),lng=city?coord?.[1]:Number(x.longitude);
      if(!Number.isFinite(Number(lat))||!Number.isFinite(Number(lng)))return;
      const el=markerElement(x.status),marker=new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([Number(lng),Number(lat)]).addTo(koreaMap);
-     el.addEventListener('click',()=>city?showKoreaMunicipality(region,city):showKoreaRegion(region));koreaMapMarkers.push(marker);
+     el.addEventListener('click',ev=>{ev.stopPropagation();city?showKoreaMunicipality(region,city,[Number(lng),Number(lat)]):showKoreaRegion(region)});koreaMapMarkers.push(marker);
    });
  });
 }
@@ -1254,7 +1378,8 @@ function renderWorldFallbackMarkers(){
    const el=markerElement(x.status==='방문'?'방문':'버킷리스트');
    el.title=`${x.country} · ${x.city} · ${x.status}`;
    const marker=new maplibregl.Marker({element:el,anchor:'center'}).setLngLat([x.lng,x.lat]).addTo(worldMap);
-   el.addEventListener('click',()=>showWorldCountry(worldGeoNameForPlace(x.country)));worldMapMarkers.push(marker);
+   // 도시 점을 누르면 국가가 아니라 그 도시의 기록을 보여줍니다. (stopPropagation: 아래 국가 영역 클릭이 함께 실행되는 것을 막음)
+   el.addEventListener('click',ev=>{ev.stopPropagation();showWorldCity(x.country,x.city,[x.lng,x.lat])});worldMapMarkers.push(marker);
  });
 }
 function renderWorld(){
