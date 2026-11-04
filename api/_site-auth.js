@@ -1,7 +1,10 @@
 const crypto = require("crypto");
 
 const COOKIE_NAME = "mtp_site_auth";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+// Keep the login session for up to 400 days.
+// The password itself does not expire or change automatically.
+// Change TRAVEL_SITE_PASSWORD in Vercel only when the owner wants a new password.
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 400;
 
 function envReady(){
   return Boolean(process.env.TRAVEL_SITE_PASSWORD && process.env.TRAVEL_AUTH_SECRET);
@@ -14,7 +17,10 @@ function parseCookies(header=""){
     if(i<0)return;
     const key=part.slice(0,i).trim();
     const value=part.slice(i+1).trim();
-    if(key) out[key]=decodeURIComponent(value);
+    if(key){
+      try{out[key]=decodeURIComponent(value)}
+      catch(_){out[key]=value}
+    }
   });
   return out;
 }
