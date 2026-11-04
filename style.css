@@ -2157,3 +2157,16 @@ button,.primary-btn,.soft-action,.ghost-btn,.nav a{
     color:#19745f;
   }
 }
+
+/* v6.1 지도 말풍선(팝업) */
+.travel-map-popup .maplibregl-popup-content{padding:10px 12px 11px;border-radius:12px;box-shadow:0 8px 24px rgba(40,70,80,.18);font-family:inherit;min-width:170px;max-width:270px}
+.travel-map-popup .maplibregl-popup-close-button{font-size:16px;line-height:1;padding:4px 7px;color:#8a9aa2;background:transparent;border:0}
+.travel-map-popup .maplibregl-popup-close-button:hover{color:#2d6474;background:transparent}
+.travel-popup b{display:block;font-size:12.5px!important;color:#2d6474;margin:0 18px 3px 0;line-height:1.35}
+.travel-popup small{display:block;font-size:9.5px!important;color:#788b95;line-height:1.6}
+.travel-popup ul{list-style:none;margin:6px 0 0;padding:6px 0 0;border-top:1px solid #e7edef;display:grid;gap:3px}
+.travel-popup li{font-size:10px!important;color:#34586a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5}
+.travel-popup li i{font-style:normal;font-weight:800;font-size:9px;color:#56a58f;margin-right:5px}
+.travel-popup li i.bucket{color:#d98a52}
+.travel-popup li i.none{color:#9aa9b0}
+.travel-popup li i:empty{display:none}

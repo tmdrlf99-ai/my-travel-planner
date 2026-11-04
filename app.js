@@ -678,6 +678,12 @@ function normalizeMunicipalityName(region,fullName){
  // 군위군은 현재 대구광역시 소속이므로 최신 앱 분류를 우선합니다.
  if(name==='군위군')return '군위군';
  if(METRO_REGIONS.has(region))return name;
+ // 2014년 청주시에 통합된 청원군은 청주로 봅니다.
+ if(name==='청원군')return '청주';
+ // v6.1.2: 지도 파일은 큰 시를 구 단위로 나눠 놓았습니다(예: 포항시남구·포항시북구, 수원시장안구…).
+ // 앱은 시 단위("포항", "수원")로 관리하므로 "○○시△△구" → "○○"로 합칩니다.
+ const split=name.match(/^(.+?)시(.+구)$/);
+ if(split)return split[1];
  return name.replace(/(시|군)$/,'');
 }
 
@@ -721,7 +727,16 @@ async function fetchKoreaMunicipalityGeoJSON(){
    if(!polygons.length)return;
    features.push({type:'Feature',id:`${regionKey}-${cityKey}-${idx}`,properties:{name:fullName,region_key:regionKey,city_key:cityKey},geometry:polygons.length===1?{type:'Polygon',coordinates:polygons[0]}:{type:'MultiPolygon',coordinates:polygons}});
  });
- return {type:'FeatureCollection',features};
+ // 같은 시로 묶인 조각(포항시남구+포항시북구 등)은 하나의 영역으로 합쳐 클릭·테두리가 한 덩어리로 보이게 합니다.
+ const merged=new Map();
+ features.forEach(f=>{
+   const key=`${f.properties.region_key}|${f.properties.city_key}`;
+   const polys=f.geometry.type==='Polygon'?[f.geometry.coordinates]:f.geometry.coordinates;
+   const prev=merged.get(key);
+   if(prev){prev.geometry.coordinates.push(...polys);prev.properties.name=f.properties.city_key;}
+   else merged.set(key,{type:'Feature',id:key,properties:{...f.properties},geometry:{type:'MultiPolygon',coordinates:[...polys]}});
+ });
+ return {type:'FeatureCollection',features:[...merged.values()].map((f,i)=>({...f,id:i+1}))};
 }
 function domesticPlacesAt(region,city){
  return places.filter(x=>{const loc=domesticPlaceLocation(x);return loc.region===region&&loc.cities.includes(city)});
